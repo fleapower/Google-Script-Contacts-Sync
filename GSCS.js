@@ -41,7 +41,7 @@ var ss = SpreadsheetApp.openById('############################################')
  * 3)  Share the spreadsheet with the client giving edit access.
  * 4)  Run ClientInit from the client's account.
  * 
- * If you have problems, please send me a message on 
+ * If you have problems, please post it on on GitHub: https://github.com/fleapower/Google-Script-Contacts-Sync/issues.
 */
 
 var startTime = new Date();
