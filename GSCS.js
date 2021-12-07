@@ -248,7 +248,7 @@ function SpreadsheetToContacts() {
   
     //compare it to my updateTime
     if (myUpdate == null || newestUpdate > myUpdate) {
-      Logger.log("     Updating...")
+      Logger.log("     Updating contact...")
 
       // Delete
       if (contactRows[i][14].includes("\"deleted\":true")) {
@@ -264,9 +264,12 @@ function SpreadsheetToContacts() {
         //    - if all dates (use array every function) are now the same in dateArray, then delete contact
         dateArray[currUserNum] = newestUpdate;
         var oldestUpdate = new Date(Math.min.apply(null, dateArray));
-        if (newestUpdate.toString == oldestUpdate.toString) {
+        if (newestUpdate.toString() == oldestUpdate.toString()) {
           sheet.deleteRow(i + 1)
-          Logger.log ("Row deleted.")
+          Logger.log ("     Row deleted.")
+        }
+        else {
+          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
         }
       }
 
@@ -312,7 +315,6 @@ function SpreadsheetToContacts() {
         Utilities.sleep(500); // delay is required to not exceed read/write quotas
         if ((contactRows[i][(currUserNum + 1) * 2 + 23])) {
           // Update Contact from Spreadsheet
-          Logger.log((contactRows[i][(currUserNum + 1) * 2 + 23]))
           var people = People.People.getBatchGet({
             resourceNames: [(contactRows[i][(currUserNum + 1) * 2 + 23])],
             personFields: 'metadata'
@@ -348,7 +350,7 @@ function SpreadsheetToContacts() {
             group = People.ContactGroups.create(groupResource);
             var groupResourceName = group.resourceName;
             contactGroupsList.push([groupName, groupResourceName])
-            Logger.log("Created Group Name: " + groupName)
+            Logger.log("     Created Group Name: " + groupName)
             Utilities.sleep(2000) // for some reason, Google needs a delay after creating a group before adding a contact or Google can't find the group and will throw an error
           }
           else {
@@ -521,10 +523,10 @@ function getUpdatedContacts() {
   while (pageToken);
   //return(updatedContacts);
   try {
-    Logger.log("Retrieved " + connections.connections.length + " updated contact(s) from user account.")
+    Logger.log("     Retrieved " + connections.connections.length + " updated contact(s) from user account.")
   }
   catch {
-    Logger.log("Retrieved 0 updated contacts from user account.")
+    Logger.log("     Retrieved 0 updated contacts from user account.")
   }
   return (connections);
 }
@@ -539,7 +541,6 @@ function getContactGroupsList() {
   contactGroupsListJSON.contactGroups.forEach(function (contactGroups) {
     contactGroupsList.push([contactGroups.name, contactGroups.resourceName])
   });
-  //Logger.log(contactGroupsList)
   return (contactGroupsList)
 }
 
