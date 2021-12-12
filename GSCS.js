@@ -11,6 +11,7 @@ SETUP
 
 Before setting up the script, you need to put all of your contacts into a single, "master" Google account and delete all of the contacts in the "client" accounts.  If you want to keep the contacts in the client accounts, you should export them using Google contacts functions and import them into the master account.  Once your have all of your contacts in a single account, follow these steps:
 
+0)  Yes, step 0, before you do anything else, export your contacts from the master account so you have a backup in case something happens to your contacts.  You can also undo changes and restore lost contacts by clicking the gear icon in the top right of the Google contacts page and selecting "Undo changes."  Regarding the latter, it would be a good idea to note the time so you can restore to that point (I name my exported contacts file with the current date and time for ease to help me undo if needed).
 1)  Go to https://script.google.com while logged in to your master Google account.
 2)  Click on the "New Project" button in the top left.
 3)  Click on "Untitled Project" in the top left and rename the script.  The name is up to you, but I recommend something like "Google Contacts Sync" so you know what it is later.
@@ -19,7 +20,7 @@ Before setting up the script, you need to put all of your contacts into a single
 6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
 */
 
-var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email3@googleAppsDomain.com'];
+var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsdomain.com'];
 
 /**
 7)  Go to https://drive.google.com.
