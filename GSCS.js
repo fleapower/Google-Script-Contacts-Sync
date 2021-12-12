@@ -1,48 +1,78 @@
-/** GSCS (Google Scripts Contact Sync) Version 1.0 Beta
- * 
- * This script is intended to synchronize all contacts between Google users.  It could easily be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
- * 
- * SETUP
- * 
- * Before setting up the script, you need to put all of your contacts into a single, "master" Google account and delete all of the contacts in the "client" accounts.  If you want to keep the contacts in the client accounts, you should export them using Google contacts functions and import them into the master account.  Once your have all of your contacts in a single account, follow the following steps:
- * 
- * 1)  Go to https://script.google.com while logged in to your master Google account.
- * 2)  Click on the "New Project" button in the top left.
- * 3)  Click on "Untitled Project" in the top left and rename the script.  The name is up to you, but I recommend something like "Google Contacts Sync" so you know what it is later.
- * 4)  Copy and paste this entire script into the editing window (be sure to replace the blank function text in the editing window).
- * 5)  Click the Sharing button in the top right and give Editor access to everyone who will be using the script (you can add more users later - see instructions below.)  Be aware, if you give other users editing privileges, they can edit the script.  If you do not want them to be able to edit the script, you will need to create their own script using steps 1-4.
- * 6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
+/**
+
+GSCS (Google Scripts Contact Sync) Version 1.2 Beta
+
+This script is intended to synchronize all contacts between Google users.  It could easily be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
+
+I'm not a professional programmer and wouldn't really even call myself a hobbyist.  I needed contacts synchronization and the options at hand were either too expensive, unreliable, or didn't have the features I needed (primarily group synchronization).  After writing this script, I can see why so many of the synchronization tools available now do not have group synchronization - it was the most difficult part of the script to get to run somewhat reliably.
+
+
+SETUP
+
+Before setting up the script, you need to put all of your contacts into a single, "master" Google account and delete all of the contacts in the "client" accounts.  If you want to keep the contacts in the client accounts, you should export them using Google contacts functions and import them into the master account.  Once your have all of your contacts in a single account, follow these steps:
+
+1)  Go to https://script.google.com while logged in to your master Google account.
+2)  Click on the "New Project" button in the top left.
+3)  Click on "Untitled Project" in the top left and rename the script.  The name is up to you, but I recommend something like "Google Contacts Sync" so you know what it is later.
+4)  Copy and paste this entire script into the editing window (be sure to replace the blank function text in the editing window).
+5)  Click the Sharing button in the top right and give Editor access to everyone who will be using the script (you can add more users later - see instructions below.)  Be aware, if you give other users editing privileges, they can edit the script.  If you do not want them to be able to edit the script, you will need to create their own script using steps 1-4.
+6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
 */
 
-var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email3@myGoogleAppDomain.com'];
+var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email3@googleAppsDomain.com'];
 
 /**
- * 7)  Go to https://drive.google.com.
- * 8)  Click on "New -> Google Sheets."  This spreadsheet can be located anywhere in any folder you choose and can be named anything you would like (again, I recommend a name easy to remember).
- * 9)  Share the document with the same users from step 5.  Be sure to give them edit access.  Again, nefarious users can destroy the spreadsheet and cause you to lose contacts.
- * 10) Copy the document ID from the URL.  Specifically, you will see something like, "https://docs.google.com/spreadsheets/d/############################################/edit#gid=0."  The document ID will be located where the string of # are.
- * 11) Paste the document ID of the spreadsheet here:
+7)  Go to https://drive.google.com.
+8)  Click on "New -> Google Sheets."  This spreadsheet can be located anywhere in any folder you choose and can be named anything you would like (again, I recommend a name easy to remember).
+9)  Share the document with the same users from step 5.  Be sure to give them edit access.  Again, nefarious users can destroy the spreadsheet and cause you to lose contacts.
+10) Copy the document ID from the URL.  Specifically, you will see something like, "https://docs.google.com/spreadsheets/d/############################################/edit#gid=0."  The document ID will be located where the string of #s are.
+11) Paste the document ID of the spreadsheet here:
 */
 
 var ss = SpreadsheetApp.openById('############################################');
 
 /**
- * 12) Go back to your script in your master account.
- * 13) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
- * 14) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
- * 15) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
- * 
- * All triggers for the script are set by the script itself.
- * 
- * ADDING USERS
- * 
- * 1)  Add the new email to the end of the list of email addresses in the syncAccounts variable above.
- * 2)  Grant editor access or create a copy of the script itself for the client.
- * 3)  Share the spreadsheet with the client giving edit access.
- * 4)  Run ClientInit from the client's account.
- * 
- * If you have problems, please post it on on GitHub: https://github.com/fleapower/Google-Script-Contacts-Sync/issues.
+12) Go back to your script in your master account.
+13) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
+14) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
+15) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
+
+All triggers for the script are set by the script itself.
+
+
+ADD USERS
+
+1)  Add the new email to the end of the list of email addresses in the syncAccounts variable above.
+2)  Grant editor access or create a copy of the script itself for the client.
+3)  Share the spreadsheet with the client giving edit access.
+4)  Run ClientInit from the client's account.
+
+
+DELETE USERS
+
+To delete users, you can simply delete the trigger running the "syncContacts" function.  However, this will leave deleted contacts in the spreadsheet since this account will now no longer delete those contacts.  A better (and lengthier) way to delete users is to:
+
+1)  Delete all triggers so the scripts don't run while you are doing the following steps:
+2)  Open the contacts spreadsheet you created.
+3)  Delete the columns of resource IDs and update times at the far right of the data which corresponds to the user being deleted.  If the user is the third listed in the "syncAccounts" variable, you would delete the third pair of corresponding ID and update time columns.
+4)  Delete the user account email from "syncAccounts."
+5)  Run the "createSyncContactsTrigger" while logged into each account (master and client).
+
+A simpler but even longer way to do the above would be to reinitialize the entire script by following the initial setup instructions (be sure to delete all triggers before you do so).
+
+
+KNOWN ISSUES
+1)  Contact groups do not sync reliably.  The last few versions have improved this immensely, and I haven't seen any problems recently, but I still don't trust it.  I'm still working on this issue.  It is highly recommended you occasionally confirm labels are the same between groups and especially after initial synchronization.
+2)  If you need to update more than 300 contacts, do it in increments of less than 300.  For example, if you need to update 400 contacts, do it in two batches of 200 and wait until the first sync cycle is complete (20 minutes) before doing the second 200.  An alternative is to delete all project triggers from all accounts and go through the setup instructions again (you can use the same spreadsheet).
+3)  Google is very sensitive about quotas, and the script will occasionally bust a quota.  However, as mentioned earlier, the algorithm is very robust in handling errors.  Synchronization errors should resolve themselves within a iterations depending on the size of the update causing the error.
+
+
+PROBLEM REPORTING OR TROUBLESHOOTING
+
+If you have problems, please post it on GitHub and I will address it as soon as possible: https://github.com/fleapower/Google-Script-Contacts-Sync/issues.  If possible, include the log from the script's executions page.
+
 */
+
 
 var startTime = new Date();
 
@@ -170,7 +200,11 @@ function ClientInit() {
     RefreshSyncToken()
     // and create syncContacts trigger
     createSyncContactsTrigger();
-    MailApp.sendEmail(currUser, "GS Contacts Sync is Synchronizing!", "The initial contact sync is complete!  You may now modify your contacts as usual.")
+    MailApp.sendEmail({
+      to: currUser,
+      subject: "GS Contacts Sync is Synchronizing!",
+      htmlBody: "The initial contact sync is complete!  You may now modify your contacts as usual."
+    })
   }
 }
 
@@ -230,9 +264,13 @@ function removeID(obj) {
 
 function SpreadsheetToContacts() {
   var dateArray = new Array();
+  var allNewMemberships = new Array();
+  var newMembership;
   Logger.log("SpreadsheetToContacts")
   var contactRows = sheet.getDataRange().getValues();
   for (var i = 0; i < contactRows.length; i++) {
+    
+    allNewMemberships = [];
 
     //get latest updateTime
     dateArray = [];
@@ -248,13 +286,12 @@ function SpreadsheetToContacts() {
   
     //compare it to my updateTime
     if (myUpdate == null || newestUpdate > myUpdate) {
-      Logger.log("     Updating contact...")
 
       // Delete
       if (contactRows[i][14].includes("\"deleted\":true")) {
         try {
           People.People.deleteContact(contactRows[i][(currUserNum + 1) * 2 + 23]);
-          Logger.log("     Successful delete.")
+          Logger.log("     Successfully deleted contact from Google account.")
         }
         catch {
           Logger.log("     Had to use alternate delete.")
@@ -277,62 +314,6 @@ function SpreadsheetToContacts() {
       else {
         LabelString = sheet.getRange(i + 1, 14).getValue()
         Labels = LabelString.split(",")
-        var bodyRequest = {
-          "etag": "",
-          "addresses": JSON.parse(contactRows[i][0]),
-          "biographies": JSON.parse(contactRows[i][1]),
-          "birthdays": JSON.parse(contactRows[i][2]),
-          "calendarUrls": JSON.parse(contactRows[i][3]),
-          "clientData": JSON.parse(contactRows[i][4]),
-          "emailAddresses": JSON.parse(contactRows[i][5]),
-          "events": JSON.parse(contactRows[i][6]),
-          "externalIds": JSON.parse(contactRows[i][7]),
-          "genders": JSON.parse(contactRows[i][8]),
-          "imClients": JSON.parse(contactRows[i][9]),
-          "interests": JSON.parse(contactRows[i][10]),
-          "locales": JSON.parse(contactRows[i][11]),
-          "locations": JSON.parse(contactRows[i][12]),
-          // "memberships": JSON.parse(contactRows[i][13]), This is nonfunctional as group resourcenames are different for each Google account.
-          "memberships": {   // clearing out all (except one - requird by Google) group labels; will be re-added below; this is so group names can be removed from contacts
-            "contactGroupMembership": {
-              "contactGroupResourceName": "contactGroups/myContacts",
-              "contactGroupId": "myContacts"
-            }
-          },
-          "metadata": JSON.parse(contactRows[i][14]),
-          "miscKeywords": JSON.parse(contactRows[i][15]),
-          "names": JSON.parse(contactRows[i][16]),
-          "nicknames": JSON.parse(contactRows[i][17]),
-          "occupations": JSON.parse(contactRows[i][18]),
-          "organizations": JSON.parse(contactRows[i][19]),
-          "phoneNumbers": JSON.parse(contactRows[i][20]),
-          "relations": JSON.parse(contactRows[i][21]),
-          "sipAddresses": JSON.parse(contactRows[i][22]),
-          "urls": JSON.parse(contactRows[i][23]),
-          "userDefined": JSON.parse(contactRows[i][24])
-        };
-
-        Utilities.sleep(500); // delay is required to not exceed read/write quotas
-        if ((contactRows[i][(currUserNum + 1) * 2 + 23])) {
-          // Update Contact from Spreadsheet
-          var people = People.People.getBatchGet({
-            resourceNames: [(contactRows[i][(currUserNum + 1) * 2 + 23])],
-            personFields: 'metadata'
-          });
-          bodyRequest.etag = people.responses[0].person.etag;
-          var personResourceName = (contactRows[i][(currUserNum + 1) * 2 + 23]);
-          // Calendar URLs is listed as an update field, but it throws an error when included below.
-          People.People.updateContact(bodyRequest, personResourceName, { updatePersonFields: "addresses,biographies,birthdays,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined" });
-          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-          var contactResourceName = personResourceName;
-        }
-        else {
-          // Add Contact from Spreadsheet
-          var newContact = People.People.createContact(bodyRequest);
-          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 24).setValue(newContact.resourceName)
-          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-          var contactResourceName = newContact.resourceName;
-        }
 
         // Add groups to new/updated contacts groups
         for (var j = 0; j < Labels.length; j++) {
@@ -353,17 +334,82 @@ function SpreadsheetToContacts() {
             Logger.log("     Created Group Name: " + groupName)
             Utilities.sleep(2000) // for some reason, Google needs a delay after creating a group before adding a contact or Google can't find the group and will throw an error
           }
+
           else {
             var groupResourceName = contactGroupsList.map(data => data[1])[groupIndex];
           }
-          // ADD CONTACT TO GROUP:
-          var membersResource = {
-            "resourceNamesToAdd": [
-              contactResourceName
-            ]
+
+          // ADD GROUP TO MEMBERSHIPS:
+
+          newMembership = {
+            "contactGroupMembership" : {
+              "contactGroupResourceName": groupResourceName
+            }
           }
-          Utilities.sleep(100); // to prevent quota read and write exceptions
-          People.ContactGroups.Members.modify(membersResource, groupResourceName);
+
+          allNewMemberships = allNewMemberships.concat(newMembership)
+
+        }
+
+        var bodyRequest = {
+          "etag": "",
+          "addresses": JSON.parse(contactRows[i][0]),
+          "biographies": JSON.parse(contactRows[i][1]),
+          "birthdays": JSON.parse(contactRows[i][2]),
+          "calendarUrls": JSON.parse(contactRows[i][3]),
+          "clientData": JSON.parse(contactRows[i][4]),
+          "emailAddresses": JSON.parse(contactRows[i][5]),
+          "events": JSON.parse(contactRows[i][6]),
+          "externalIds": JSON.parse(contactRows[i][7]),
+          "genders": JSON.parse(contactRows[i][8]),
+          "imClients": JSON.parse(contactRows[i][9]),
+          "interests": JSON.parse(contactRows[i][10]),
+          "locales": JSON.parse(contactRows[i][11]),
+          "locations": JSON.parse(contactRows[i][12]),
+          "memberships": allNewMemberships,
+          "metadata": JSON.parse(contactRows[i][14]),
+          "miscKeywords": JSON.parse(contactRows[i][15]),
+          "names": JSON.parse(contactRows[i][16]),
+          "nicknames": JSON.parse(contactRows[i][17]),
+          "occupations": JSON.parse(contactRows[i][18]),
+          "organizations": JSON.parse(contactRows[i][19]),
+          "phoneNumbers": JSON.parse(contactRows[i][20]),
+          "relations": JSON.parse(contactRows[i][21]),
+          "sipAddresses": JSON.parse(contactRows[i][22]),
+          "urls": JSON.parse(contactRows[i][23]),
+          "userDefined": JSON.parse(contactRows[i][24])
+        };
+
+        Utilities.sleep(500); // delay is required to not exceed read/write quotas
+        
+        if ((contactRows[i][(currUserNum + 1) * 2 + 23])) {
+          // Update Contact from Spreadsheet
+          var people = People.People.getBatchGet({
+            resourceNames: [(contactRows[i][(currUserNum + 1) * 2 + 23])],
+            personFields: 'metadata'
+          });
+          if (people.responses[0].person) {
+            bodyRequest.etag = people.responses[0].person.etag;
+            var personResourceName = (contactRows[i][(currUserNum + 1) * 2 + 23]);
+            // Calendar URLs is listed as an update field, but it throws an error when included below.
+            Logger.log("     Updating Google contact...")
+            People.People.updateContact(bodyRequest, personResourceName, { updatePersonFields: "addresses,biographies,birthdays,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined" });
+            sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
+          }
+          else{
+            MailApp.sendEmail({
+              to: currUser,
+              subject: "GSCS Sync Conflict",
+              htmlBody: "Contact " + (contactRows[i][(currUserNum + 1) * 2 + 23]) + " has been deleted, but other users have updated the contact's information since you deleted it.  It is recommend you take this contact out of your trash.  If you still want to delete it, try again after removing it from the trash."
+            })
+          }
+        }
+        else {
+          // Add Contact from Spreadsheet
+          var newContact = People.People.createContact(bodyRequest);
+          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 24).setValue(newContact.resourceName)
+          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
+          Logger.log("     Adding Google contact...")
         }
       }
     }
@@ -386,54 +432,38 @@ function ContactsToSpreadsheet(updatedContacts) {
       var updateTime = new Date();
       // find contact in spreadsheet which matches updated contact from Contacts
       searchResult = columnValues.indexOf(contact.resourceName);
+
+      contactArray = getContactArray(contact);
+
+      // remove ID tags and stringify
+      contactArray = RemoveIDandStringify(contactArray)
+
+      // Store Contact Groups
+      if (contact.memberships != null) {
+        var contactGroups = []
+        for (var i = 0; i < contact.memberships.length; i++) {
+          for (var j = 0; j < contactGroupsList.length; j++) {
+            if (contact.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
+              contactGroups[i] = contactGroupsList[j][0]
+            }
+          }
+        }
+        contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
+      }
+
       if (searchResult != -1) {
         dateArray = [];
         for (var i = 0; i < syncAccounts.length; i++) {
           dateArray.push(sheet.getRange(searchResult + 1, (i + 1) * 2 + 25).getValue())
         }
-        // TURN THIS INTO A FUNCTION SINCE IT IS USED TO INITIALIZE THE SPREADSHEET
         // Update contact
-        var contactArray = [contact.addresses, contact.biographies, contact.birthdays, contact.calendarUrls, contact.clientData, contact.emailAddresses, contact.events, contact.externalIds, contact.genders, contact.imClients, contact.interests, contact.locales, contact.locations, contact.memberships, contact.metadata, contact.miscKeywords, contact.names, contact.nicknames, contact.occupations, contact.organizations, contact.phoneNumbers, contact.relations, contact.sipAddresses, contact.urls, contact.userDefined];
 
-        // remove ID tags and stringify
-        contactArray = RemoveIDandStringify(contactArray)
-
-        // Save Contact Groups
-        if (contact.memberships != null) {
-          var contactGroups = []
-          for (var i = 0; i < contact.memberships.length; i++) {
-            for (var j = 0; j < contactGroupsList.length; j++) {
-              if (contact.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
-                contactGroups[i] = contactGroupsList[j][0]
-              }
-            }
-          }
-          contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
-        }
-
+        Logger.log ("     Updating spreadsheet...")
         sheet.getRange(searchResult + 1, 1, 1, 25).setValues([contactArray]);
         sheet.getRange(searchResult + 1, (currUserNum + 1) * 2 + 25).setValue(updateTime);
       }
       else {
         // Add contact
-        // TURN THIS INTO A FUNCTION SINCE IT IS USED TO INITIALIZE THE SPREADSHEET
-        var contactArray = [contact.addresses, contact.biographies, contact.birthdays, contact.calendarUrls, contact.clientData, contact.emailAddresses, contact.events, contact.externalIds, contact.genders, contact.imClients, contact.interests, contact.locales, contact.locations, contact.memberships, contact.metadata, contact.miscKeywords, contact.names, contact.nicknames, contact.occupations, contact.organizations, contact.phoneNumbers, contact.relations, contact.sipAddresses, contact.urls, contact.userDefined];
-
-        // remove ID tags and stringify
-        contactArray = RemoveIDandStringify(contactArray)
-
-        // Save Contact Groups
-        if (contact.memberships != null) {
-          var contactGroups = []
-          for (var i = 0; i < contact.memberships.length; i++) {
-            for (var j = 0; j < contactGroupsList.length; j++) {
-              if (contact.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
-                contactGroups[i] = contactGroupsList[j][0]
-              }
-            }
-          }
-          contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
-        }
 
         // append array with individual user's resourceNames
         var resourceNamesArray = [];
@@ -447,10 +477,15 @@ function ContactsToSpreadsheet(updatedContacts) {
         }
         // add contact to end of sheet
         var appendArray = contactArray.concat(resourceNamesArray);
+        Logger.log ("     Adding contact to spreadsheet...")
         sheet.appendRow(appendArray);
       }
     })
   }
+}
+
+function getContactArray (contact) {
+  return ([contact.addresses, contact.biographies, contact.birthdays, contact.calendarUrls, contact.clientData, contact.emailAddresses, contact.events, contact.externalIds, contact.genders, contact.imClients, contact.interests, contact.locales, contact.locations, contact.memberships, contact.metadata, contact.miscKeywords, contact.names, contact.nicknames, contact.occupations, contact.organizations, contact.phoneNumbers, contact.relations, contact.sipAddresses, contact.urls, contact.userDefined]);
 }
 
 function SaveContactGroups() {
