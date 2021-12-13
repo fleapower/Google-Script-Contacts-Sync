@@ -503,8 +503,6 @@ function RefreshSyncToken() {
   var syncTokenFile = syncTokenFiles.next();
   var syncToken = syncTokenFile.getBlob().getDataAsString("utf8");
 
-  Logger.log (syncTokenExpired)
-
   do {
     if (!syncTokenExpired) {
       var connections = People.People.Connections.list('people/me', {
