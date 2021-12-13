@@ -33,10 +33,12 @@ var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsd
 var ss = SpreadsheetApp.openById('############################################');
 
 /**
-12) Go back to your script in your master account.
-13) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
-14) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
-15) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
+
+12) Create a text file anywhere in Google drive with your email address followed by "_PeopleSyncToken.txt."  For example:  email@gmail.com_PeopleSyncToken.txt.
+13) Go back to your script in your master account.
+14) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
+15) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
+16) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
 
 All triggers for the script are set by the script itself.
 
