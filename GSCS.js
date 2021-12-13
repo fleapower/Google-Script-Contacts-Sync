@@ -1,10 +1,10 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 1.2 Beta
+GSCS (Google Scripts Contact Sync) Version 1.5 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could easily be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
-I'm not a professional programmer and wouldn't really even call myself a hobbyist.  I needed contacts synchronization and the options at hand were either too expensive, unreliable, or didn't have the features I needed (primarily group synchronization).  After writing this script, I can see why so many of the synchronization tools available now do not have group synchronization - it was the most difficult part of the script to get to run somewhat reliably.
+I'm not a professional programmer and wouldn't really even call myself a hobbyist.  I needed contacts synchronization and the options at hand were either too expensive, unreliable, or didn't have the features I needed (primarily group synchronization), so I Frankensteined this thing together.  After writing this script, I can see why so many of the synchronization tools available now do not have group synchronization - it was the most difficult part of the script to get to run somewhat reliably.
 
 
 SETUP
@@ -89,6 +89,8 @@ var updatedContacts;
 var pageSize = 2000;
 var masterPersonFields = 'addresses,biographies,birthdays,calendarUrls,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,metadata,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined'
 
+var syncTokenExpired = false;
+
 var contactGroupsList = getContactGroupsList();
 
 function MasterInit() {
@@ -120,6 +122,7 @@ function MasterInit() {
 
 
       // remove ID tags and stringify
+      /**
       for (var i = 0; i < contactArray.length; i++) {
         if (contactArray[i]) {
           removeID(contactArray[i])
@@ -131,6 +134,9 @@ function MasterInit() {
           contactArray[i] = {}
         }
       }
+      */
+      
+      contactArray = RemoveIDandStringify(contactArray)
 
       // append array with individual user's resourceNames
       var resourceNamesArray = [];
@@ -299,7 +305,7 @@ function SpreadsheetToContacts() {
         }
         // If doing multiple users, remove contact from spreadsheet only after last user has deleted contact (i.e. all users have same update date/time)
         //    - update dateArray by replacing myUpdate with newestUpdate
-        //    - if all dates (use array every function) are now the same in dateArray, then delete contact
+        //    - if all dates (use array every function) are now the same in dateArray, then delete contact from spreadsheet
         dateArray[currUserNum] = newestUpdate;
         var oldestUpdate = new Date(Math.min.apply(null, dateArray));
         if (newestUpdate.toString() == oldestUpdate.toString()) {
@@ -489,20 +495,6 @@ function getContactArray (contact) {
   return ([contact.addresses, contact.biographies, contact.birthdays, contact.calendarUrls, contact.clientData, contact.emailAddresses, contact.events, contact.externalIds, contact.genders, contact.imClients, contact.interests, contact.locales, contact.locations, contact.memberships, contact.metadata, contact.miscKeywords, contact.names, contact.nicknames, contact.occupations, contact.organizations, contact.phoneNumbers, contact.relations, contact.sipAddresses, contact.urls, contact.userDefined]);
 }
 
-function SaveContactGroups() {
-  if (contact.memberships != null) {
-    var contactGroups = []
-    for (var i = 0; i < contact.memberships.length; i++) {
-      for (var j = 0; j < contactGroupsList.length; j++) {
-        if (contact.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
-          contactGroups[i] = contactGroupsList[j][0]
-        }
-      }
-    }
-    contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
-  }
-}
-
 function RefreshSyncToken() {
   Logger.log("RefreshSynctoken")
   var i = 0;
@@ -511,19 +503,30 @@ function RefreshSyncToken() {
   var syncTokenFile = syncTokenFiles.next();
   var syncToken = syncTokenFile.getBlob().getDataAsString("utf8");
 
+  Logger.log (syncTokenExpired)
+
   do {
-    var connections = People.People.Connections.list('people/me', {
-      pageToken: pageToken,
-      requestSyncToken: true,
-      syncToken: syncToken,
-      pageSize: pageSize,
-      personFields: masterPersonFields,
-      sources: ["READ_SOURCE_TYPE_CONTACT"]
-    });
+    if (!syncTokenExpired) {
+      var connections = People.People.Connections.list('people/me', {
+        pageToken: pageToken,
+        requestSyncToken: true,
+        syncToken: syncToken,
+        pageSize: pageSize,
+        personFields: masterPersonFields,
+        sources: ["READ_SOURCE_TYPE_CONTACT"]
+      });
+    }
+    else {
+      var connections = People.People.Connections.list('people/me', {
+        pageToken: pageToken,
+        requestSyncToken: true,
+        pageSize: pageSize,
+        personFields: masterPersonFields,
+        sources: ["READ_SOURCE_TYPE_CONTACT"]
+      });
+    }
     try {
       connections.connections.forEach(function (person) {
-        // var contactArray = [person.metadata];
-        // next page token
         var newSyncToken = connections.nextSyncToken;
       });
     }
@@ -536,7 +539,7 @@ function RefreshSyncToken() {
 
   var newSyncToken = connections.nextSyncToken;
   syncTokenFile.setContent(newSyncToken);
-  Logger.log(newSyncToken)
+  return(newSyncToken);
 }
 
 function getUpdatedContacts() {
@@ -546,18 +549,34 @@ function getUpdatedContacts() {
   var syncTokenFiles = DriveApp.getFilesByName(syncTokenFileName);
   var syncTokenFile = syncTokenFiles.next();
   var syncToken = syncTokenFile.getBlob().getDataAsString("utf8");
+  var refreshedSyncToken = new Boolean();
 
   do {
-    var connections = People.People.Connections.list('people/me', {
-      pageToken: pageToken,
-      syncToken: syncToken,
-      pageSize: pageSize,
-      personFields: masterPersonFields,
-      sources: ["READ_SOURCE_TYPE_CONTACT"]
-    });
+    try {
+      refreshedSyncToken = false;
+      var connections = People.People.Connections.list('people/me', {
+        pageToken: pageToken,
+        syncToken: syncToken,
+        pageSize: pageSize,
+        personFields: masterPersonFields,
+        sources: ["READ_SOURCE_TYPE_CONTACT"]
+      });
+    }
+    catch {
+      Logger.log ("Sync token error.  Refreshing token.");
+      syncTokenExpired = true;
+      syncToken = RefreshSyncToken();
+      syncTokenExpired = false;
+      refreshedSyncToken = true;
+      MailApp.sendEmail({
+        to: currUser,
+        subject: "GS Contacts Sync syncToken error!",
+        htmlBody: "There was a syncToken error while synchronizing.  Synchronizations may have been lost.  Please check your contacts."
+      })
+    }
   }
-  while (pageToken);
-  //return(updatedContacts);
+  while (pageToken || refreshedSyncToken == true);
+  
   try {
     Logger.log("     Retrieved " + connections.connections.length + " updated contact(s) from user account.")
   }
