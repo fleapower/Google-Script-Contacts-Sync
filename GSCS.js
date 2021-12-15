@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 1.5 Beta
+GSCS (Google Scripts Contact Sync) Version 1.6 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could easily be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
@@ -33,12 +33,17 @@ var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsd
 var ss = SpreadsheetApp.openById('############################################');
 
 /**
-
 12) Create a text file anywhere in Google drive with your email address followed by "_PeopleSyncToken.txt."  For example:  email@gmail.com_PeopleSyncToken.txt.
 13) Go back to your script in your master account.
 14) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
 15) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
 16) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
+17) Set the following variable to the email address you status emails sent to which the script occasionally generates.
+*/
+
+var statusEmail = 'email@gmail.com'
+
+/**
 
 All triggers for the script are set by the script itself.
 
@@ -188,9 +193,11 @@ function MasterInit() {
 }
 
 function ClientInit() {
-  RefreshSyncToken();
-  // since ClientInit is going to create triggers, delete all triggers so they don't overlap/conflict
+
+  // delete all triggers since ClientInit will create another
   deleteAllTriggers();
+
+  RefreshSyncToken();
 
   // create ClientInit to run again in seven minutes, one minute after extended runtime error would be thrown
   ScriptApp.newTrigger("ClientInit")
@@ -210,9 +217,9 @@ function ClientInit() {
     // and create syncContacts trigger
     createSyncContactsTrigger();
     MailApp.sendEmail({
-      to: currUser,
+      to: statusEmail,
       subject: "GS Contacts Sync is Synchronizing!",
-      htmlBody: "The initial contact sync is complete!  You may now modify your contacts as usual."
+      htmlBody: "The initial contact sync for " + currUser + " is complete!  Contacts may be added, modified, or deleted as usual."
     })
   }
 }
@@ -272,11 +279,14 @@ function removeID(obj) {
 }
 
 function SpreadsheetToContacts() {
+
+  Logger.log("SpreadsheetToContacts")
+
   var dateArray = new Array();
   var allNewMemberships = new Array();
   var newMembership;
-  Logger.log("SpreadsheetToContacts")
   var contactRows = sheet.getDataRange().getValues();
+
   for (var i = 0; i < contactRows.length; i++) {
     
     allNewMemberships = [];
@@ -305,18 +315,25 @@ function SpreadsheetToContacts() {
         catch {
           Logger.log("     Had to use alternate delete.")
         }
+        // *****************************************************************************************************************************************************************
+        // This code snippet is no longer used as of v1.6.  If a contact was removed while another user was sync'ing, it would cause issues with their sync.
+        // Additionally, the contactRows variable for this user would no longer match the sheet and would cause problems in sync'ing.
+        // Therefore, the deleted contact is left in the spreadsheet.  This will slow the script down as more and more deleted users are placed into the spreadsheet.
+        // For future development, I need to write a maintenance script which will keep all instances of this script from running while the maintenance script is running.
+        // *****************************************************************************************************************************************************************
+        // 
         // If doing multiple users, remove contact from spreadsheet only after last user has deleted contact (i.e. all users have same update date/time)
         //    - update dateArray by replacing myUpdate with newestUpdate
         //    - if all dates (use array every function) are now the same in dateArray, then delete contact from spreadsheet
-        dateArray[currUserNum] = newestUpdate;
-        var oldestUpdate = new Date(Math.min.apply(null, dateArray));
-        if (newestUpdate.toString() == oldestUpdate.toString()) {
-          sheet.deleteRow(i + 1)
-          Logger.log ("     Row deleted.")
-        }
-        else {
-          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-        }
+        // dateArray[currUserNum] = newestUpdate;
+        // var oldestUpdate = new Date(Math.min.apply(null, dateArray));
+        // if (newestUpdate.toString() == oldestUpdate.toString()) {
+        //   sheet.deleteRow(i + 1)
+        //   Logger.log ("     Row deleted.");
+        // }
+        // else {
+        sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
+        // }
       }
 
       // Update or Add
@@ -407,9 +424,9 @@ function SpreadsheetToContacts() {
           }
           else{
             MailApp.sendEmail({
-              to: currUser,
+              to: statusEmail,
               subject: "GSCS Sync Conflict",
-              htmlBody: "Contact " + (contactRows[i][(currUserNum + 1) * 2 + 23]) + " has been deleted, but other users have updated the contact's information since you deleted it.  It is recommend you take this contact out of your trash.  If you still want to delete it, try again after removing it from the trash."
+              htmlBody: "Contact " + (contactRows[i][(currUserNum + 1) * 2 + 23]) + " for " + currUser + " has been deleted, but other users have updated the contact's information since it was deleted.  It is recommended you remove this contact from the trash.  If this contact should be deleted, try again after removing it from the trash."
             })
           }
         }
@@ -569,7 +586,7 @@ function getUpdatedContacts() {
       syncTokenExpired = false;
       refreshedSyncToken = true;
       MailApp.sendEmail({
-        to: currUser,
+        to: statusEmail,
         subject: "GS Contacts Sync syncToken error!",
         htmlBody: "There was a syncToken error while synchronizing.  Synchronizations may have been lost.  Please check your contacts."
       })
