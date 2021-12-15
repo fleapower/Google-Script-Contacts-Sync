@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 1.6 Beta
+GSCS (Google Scripts Contact Sync) Version 1.62 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
@@ -310,16 +310,19 @@ function SpreadsheetToContacts() {
       if (contactRows[i][14].includes("\"deleted\":true")) {
         try {
           People.People.deleteContact(contactRows[i][(currUserNum + 1) * 2 + 23]);
-          Logger.log("     Successfully deleted contact from Google account.")
+          Logger.log("     Successfully deleted contact " + contactRows[i][(currUserNum + 1) * 2 + 23] + " from Google account.")
         }
         catch {
-          Logger.log("     Had to use alternate delete.")
+          Logger.log("     Had to use alternate delete.  " + contactRows[i][(currUserNum + 1) * 2 + 23] + " did not exist.")
         }
         // *****************************************************************************************************************************************************************
-        // This code snippet is no longer used as of v1.6.  If a contact was removed while another user was sync'ing, it would cause issues with their sync.
+        // This code snippet is no longer used as of v1.6.  If a contact was deleted while another user was sync'ing, it would cause issues with their sync.
         // Additionally, the contactRows variable for this user would no longer match the sheet and would cause problems in sync'ing.
         // Therefore, the deleted contact is left in the spreadsheet.  This will slow the script down as more and more deleted users are placed into the spreadsheet.
         // For future development, I need to write a maintenance script which will keep all instances of this script from running while the maintenance script is running.
+        // 
+        // Possible fix is to turn off access to the spreadsheet and ensure other users can't runt heir script, delete triggers for this user, and then regrant access and
+        // turn on triggers.
         // *****************************************************************************************************************************************************************
         // 
         // If doing multiple users, remove contact from spreadsheet only after last user has deleted contact (i.e. all users have same update date/time)
@@ -357,7 +360,7 @@ function SpreadsheetToContacts() {
             group = People.ContactGroups.create(groupResource);
             var groupResourceName = group.resourceName;
             contactGroupsList.push([groupName, groupResourceName])
-            Logger.log("     Created Group Name: " + groupName)
+            Logger.log("     Created group " + groupName + ".")
             Utilities.sleep(2000) // for some reason, Google needs a delay after creating a group before adding a contact or Google can't find the group and will throw an error
           }
 
@@ -418,7 +421,7 @@ function SpreadsheetToContacts() {
             bodyRequest.etag = people.responses[0].person.etag;
             var personResourceName = (contactRows[i][(currUserNum + 1) * 2 + 23]);
             // Calendar URLs is listed as an update field, but it throws an error when included below.
-            Logger.log("     Updating Google contact...")
+            Logger.log("     Updated Google contact " + personResourceName + ".")
             People.People.updateContact(bodyRequest, personResourceName, { updatePersonFields: "addresses,biographies,birthdays,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined" });
             sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
           }
@@ -435,7 +438,7 @@ function SpreadsheetToContacts() {
           var newContact = People.People.createContact(bodyRequest);
           sheet.getRange(i + 1, (currUserNum + 1) * 2 + 24).setValue(newContact.resourceName)
           sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-          Logger.log("     Adding Google contact...")
+          Logger.log("     Adding Google contact " + newContact.resourceName + ".")
         }
       }
     }
@@ -484,7 +487,7 @@ function ContactsToSpreadsheet(updatedContacts) {
         }
         // Update contact
 
-        Logger.log ("     Updating spreadsheet...")
+        Logger.log ("     Updated " + contact.resourceName + " on spreadsheet.")
         sheet.getRange(searchResult + 1, 1, 1, 25).setValues([contactArray]);
         sheet.getRange(searchResult + 1, (currUserNum + 1) * 2 + 25).setValue(updateTime);
       }
@@ -503,7 +506,7 @@ function ContactsToSpreadsheet(updatedContacts) {
         }
         // add contact to end of sheet
         var appendArray = contactArray.concat(resourceNamesArray);
-        Logger.log ("     Adding contact to spreadsheet...")
+        Logger.log ("     Added " + contact.resourceName + " to spreadsheet.")
         sheet.appendRow(appendArray);
       }
     })
