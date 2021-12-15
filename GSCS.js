@@ -38,7 +38,7 @@ var ss = SpreadsheetApp.openById('############################################')
 14) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
 15) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
 16) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
-17) Set the following variable to the email address you status emails sent to which the script occasionally generates.
+17) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
 */
 
 var statusEmail = 'email@gmail.com'
