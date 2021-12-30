@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 1.62 Beta
+GSCS (Google Scripts Contact Sync) Version 2.0 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
@@ -11,7 +11,7 @@ SETUP
 
 Before setting up the script, you need to put all of your contacts into a single, "master" Google account and delete all of the contacts in the "client" accounts.  If you want to keep the contacts in the client accounts, you should export them using Google contacts functions and import them into the master account.  Once your have all of your contacts in a single account, follow these steps:
 
-0)  Yes, step 0, before you do anything else, export your contacts from the master account so you have a backup in case something happens to your contacts.  You can also undo changes and restore lost contacts by clicking the gear icon in the top right of the Google contacts page and selecting "Undo changes."  Regarding the latter, it would be a good idea to note the time so you can restore to that point (I name my exported contacts file with the current date and time for ease to help me undo if needed).
+0)  Yes, step 0, before you do anything else, export your contacts so you have a backup in case something happens to your contacts.  You can also undo changes and restore lost contacts by clicking the gear icon in the top right of the Google contacts page and selecting "Undo changes."  Regarding the latter, it would be a good idea to note the time so you can restore to that point (I name my exported contacts file with the current date and time for ease to help me undo if needed).
 1)  Go to https://script.google.com while logged in to your master Google account.
 2)  Click on the "New Project" button in the top left.
 3)  Click on "Untitled Project" in the top left and rename the script.  The name is up to you, but I recommend something like "Google Contacts Sync" so you know what it is later.
@@ -23,9 +23,9 @@ Before setting up the script, you need to put all of your contacts into a single
 var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsdomain.com'];
 
 /**
-7)  Go to https://drive.google.com.
+7)  Open a new tab in your browser and go to https://drive.google.com from your master account.
 8)  Click on "New -> Google Sheets."  This spreadsheet can be located anywhere in any folder you choose and can be named anything you would like (again, I recommend a name easy to remember).
-9)  Share the document with the same users from step 5.  Be sure to give them edit access.  Again, nefarious users can destroy the spreadsheet and cause you to lose contacts.
+9)  Share the document with the same users from step 6.  Be sure to give them edit access.  Again, nefarious users can destroy the spreadsheet and cause you to lose contacts.
 10) Copy the document ID from the URL.  Specifically, you will see something like, "https://docs.google.com/spreadsheets/d/############################################/edit#gid=0."  The document ID will be located where the string of #s are.
 11) Paste the document ID of the spreadsheet here:
 */
@@ -33,12 +33,11 @@ var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsd
 var ss = SpreadsheetApp.openById('############################################');
 
 /**
-12) Create a text file anywhere in Google drive with your email address followed by "_PeopleSyncToken.txt."  For example:  email@gmail.com_PeopleSyncToken.txt.
-13) Go back to your script in your master account.
-14) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
-15) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
-16) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
-17) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
+12) Go back to your script in your master account.
+13) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
+14) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
+15) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
+16) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
 */
 
 var statusEmail = 'email@gmail.com'
@@ -58,21 +57,31 @@ ADD USERS
 
 DELETE USERS
 
-To delete users, you can simply delete the trigger running the "syncContacts" function.  However, this will leave deleted contacts in the spreadsheet since this account will now no longer delete those contacts.  A better (and lengthier) way to delete users is to:
+Method 1 (simplest):
 
-1)  Delete all triggers so the scripts don't run while you are doing the following steps:
+1)  Delete the trigger running the "syncContacts" function.
+2)  To ensure the user can't make changes to the script or the spreadsheet, you should also remove sharing permissions with that user.  If you no longer have access to that user's account to delete the trigger, the only way to delete a user is to remove these permissions.
+
+Method 2 (more thorough, but more complex):
+
+1)  Delete all triggers for all users, so the scripts don't run while you are doing the following steps:
 2)  Open the contacts spreadsheet you created.
 3)  Delete the columns of resource IDs and update times at the far right of the data which corresponds to the user being deleted.  If the user is the third listed in the "syncAccounts" variable, you would delete the third pair of corresponding ID and update time columns.
 4)  Delete the user account email from "syncAccounts."
 5)  Run the "createSyncContactsTrigger" while logged into each account (master and client).
 
-A simpler but even longer way to do the above would be to reinitialize the entire script by following the initial setup instructions (be sure to delete all triggers before you do so).
+Method 3 (simpler than method #1, most thorough, but longer):
+
+1)  Delete all triggers for all users.
+2)  Follow the initial setup instructions.
 
 
 KNOWN ISSUES
-1)  Contact groups do not sync reliably.  The last few versions have improved this immensely, and I haven't seen any problems recently, but I still don't trust it.  I'm still working on this issue.  It is highly recommended you occasionally confirm labels are the same between groups and especially after initial synchronization.
-2)  If you need to update more than 300 contacts, do it in increments of less than 300.  For example, if you need to update 400 contacts, do it in two batches of 200 and wait until the first sync cycle is complete (20 minutes) before doing the second 200.  An alternative is to delete all project triggers from all accounts and go through the setup instructions again (you can use the same spreadsheet).
-3)  Google is very sensitive about quotas, and the script will occasionally bust a quota.  However, as mentioned earlier, the algorithm is very robust in handling errors.  Synchronization errors should resolve themselves within a iterations depending on the size of the update causing the error.
+
+1)  RESOLVED IN 2.0.  Contact groups do not sync reliably.  The last few versions have improved this immensely, and I haven't seen any problems recently, but I still don't trust it.  I'm still working on this issue.  It is highly recommended you occasionally confirm labels are the same between groups and especially after initial synchronization.
+2)  RESOLVED IN 2.0.  If you need to update more than 300 contacts, do it in increments of less than 300.  For example, if you need to update 400 contacts, do it in two batches of 200 and wait until the first sync cycle is complete (20 minutes) before doing the second 200.  An alternative is to delete all project triggers from all accounts and go through the setup instructions again (you can use the same spreadsheet).
+3)  Google is very sensitive about quotas, and the script will occasionally bust a quota.  However, as mentioned earlier, the algorithm is very robust in handling errors.  Synchronization errors should resolve themselves after a few executions.
+4)  Because Google contacts were never intended to be synchronized between multiple accounts, there is a slight possibility that a contact will not be synchronized if a user updates the contact in the few seconds between their own contacts being updated and a new sync token being generated.  Given typical script runtimes, this is about a 1:300 chance this will happen.  If you notice an unsync'd contact, simply making a small change to the contact (adding a label and then removing it) will force a resync.
 
 
 PROBLEM REPORTING OR TROUBLESHOOTING
@@ -81,18 +90,17 @@ If you have problems, please post it on GitHub and I will address it as soon as 
 
 */
 
-
 var startTime = new Date();
 
 var currUser = Session.getEffectiveUser().getEmail();
 Logger.log(currUser)
 var currUserNum = syncAccounts.indexOf(currUser);
-var otherUserNum = Math.abs(currUserNum - 1)
 
 var sheet = ss.getSheets()[0];
-sheet.activate();
+var mySheet = ss.getSheetByName(currUser);
+
 var syncTokenFileName = currUser + "_PeopleSyncToken.txt";
-var updatedContacts;
+
 var pageSize = 2000;
 var masterPersonFields = 'addresses,biographies,birthdays,calendarUrls,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,metadata,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined'
 
@@ -101,13 +109,13 @@ var syncTokenExpired = false;
 var contactGroupsList = getContactGroupsList();
 
 function MasterInit() {
+  ss.insertSheet(currUser);
   RefreshSyncToken();
   deleteAllTriggers();
   var n = 0;
   var appendArray = new Array();
   var updateTime = new Date();
   var allContactsArray = new Array();
-  sheet.activate()
   // Initialize sheet by deleting all rows
   if (sheet.getLastRow() > 1) {
     sheet.deleteRows(1, sheet.getLastRow() - 1);
@@ -127,22 +135,7 @@ function MasterInit() {
     connections.connections.forEach(function (person) {
       var contactArray = [person.addresses, person.biographies, person.birthdays, person.calendarUrls, person.clientData, person.emailAddresses, person.events, person.externalIds, person.genders, person.imClients, person.interests, person.locales, person.locations, person.memberships, person.metadata, person.miscKeywords, person.names, person.nicknames, person.occupations, person.organizations, person.phoneNumbers, person.relations, person.sipAddresses, person.urls, person.userDefined];
 
-
       // remove ID tags and stringify
-      /**
-      for (var i = 0; i < contactArray.length; i++) {
-        if (contactArray[i]) {
-          removeID(contactArray[i])
-        }
-        if (contactArray[i]) {
-          contactArray[i] = JSON.stringify(contactArray[i])
-        }
-        else {
-          contactArray[i] = {}
-        }
-      }
-      */
-      
       contactArray = RemoveIDandStringify(contactArray)
 
       // append array with individual user's resourceNames
@@ -187,8 +180,10 @@ function MasterInit() {
   var syncTokenFile = syncTokenFiles.next();
   syncTokenFile.setContent(connections.nextSyncToken);
 
-  // create syncContacts trigger
   createSyncContactsTrigger();
+
+  createDailyMaintenanceTrigger();
+
   showElapsedTime();
 }
 
@@ -213,9 +208,17 @@ function ClientInit() {
   if (completedStatus == "complete") {
     deleteAllTriggers();
     // refreshSyncToken to start syncing normally from this point
-    RefreshSyncToken()
-    // and create syncContacts trigger
+    RefreshSyncToken();
+
+    // create user contacts sync queue
+    ss.insertSheet(currUser);
+
+    // create file for syncToken storage
+    DriveApp.createFile(syncTokenFileName, "");
+
+    // create syncContacts trigger
     createSyncContactsTrigger();
+
     MailApp.sendEmail({
       to: statusEmail,
       subject: "GS Contacts Sync is Synchronizing!",
@@ -225,26 +228,39 @@ function ClientInit() {
 }
 
 function deleteAllTriggers() {
+  Logger.log ("  deleteAllTriggers")
   var triggers = ScriptApp.getProjectTriggers();
-  for (var i = 0; i < triggers.length; i++) {
-    ScriptApp.deleteTrigger(triggers[i]);
+  for (var i in triggers) {
+    if (triggers[i].getHandlerFunction() != "dailyMaintenance") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
   }
 }
 
 function createSyncContactsTrigger() {
   ScriptApp.newTrigger("syncContacts")
     .timeBased()
-    .everyMinutes(10) // contacts will be synced every hour
+    .everyMinutes(10) // contacts will be synced every 10 minutes
+    .create();
+}
+
+function createDailyMaintenanceTrigger() {
+  ScriptApp.newTrigger("dailyMaintenance")
+    .timeBased()
+    .atHour(3)
+    .everyDays(1)  // maintenance will run every 24 hours
     .create();
 }
 
 function syncContacts() {
   // Get new contacts from user (otherwise, when contacts are sync'd to spreadsheet, it will start a loop)
-  updatedContacts = getUpdatedContacts();
+  //updatedContacts = GetUpdatedContacts();
+  GetUpdatedContacts();
+  showElapsedTime();
+  // ContactsToSpreadsheet(updatedContacts);
+  UpdatesMerge();
   showElapsedTime();
   SpreadsheetToContacts();
-  showElapsedTime();
-  ContactsToSpreadsheet(updatedContacts);
   showElapsedTime();
   // it appears refreshing the sync token too quickly after updates does not capture the most recent updates
   // this does leave open the possibility that contacts which are updated during this interval or while the script is running will not be synchronized
@@ -288,7 +304,7 @@ function SpreadsheetToContacts() {
   var contactRows = sheet.getDataRange().getValues();
 
   for (var i = 0; i < contactRows.length; i++) {
-    
+
     allNewMemberships = [];
 
     //get latest updateTime
@@ -299,10 +315,10 @@ function SpreadsheetToContacts() {
     if (!dateArray[currUserNum]) {
       dateArray[currUserNum] = 0
     }
-    
+
     var newestUpdate = new Date(Math.max.apply(null, dateArray));
     var myUpdate = contactRows[i][(currUserNum * 2) + 26]
-  
+
     //compare it to my updateTime
     if (myUpdate == null || newestUpdate > myUpdate) {
 
@@ -315,28 +331,7 @@ function SpreadsheetToContacts() {
         catch {
           Logger.log("     Had to use alternate delete.  " + contactRows[i][(currUserNum + 1) * 2 + 23] + " did not exist.")
         }
-        // *****************************************************************************************************************************************************************
-        // This code snippet is no longer used as of v1.6.  If a contact was deleted while another user was sync'ing, it would cause issues with their sync.
-        // Additionally, the contactRows variable for this user would no longer match the sheet and would cause problems in sync'ing.
-        // Therefore, the deleted contact is left in the spreadsheet.  This will slow the script down as more and more deleted users are placed into the spreadsheet.
-        // For future development, I need to write a maintenance script which will keep all instances of this script from running while the maintenance script is running.
-        // 
-        // Possible fix is to turn off access to the spreadsheet and ensure other users can't runt heir script, delete triggers for this user, and then regrant access and
-        // turn on triggers.
-        // *****************************************************************************************************************************************************************
-        // 
-        // If doing multiple users, remove contact from spreadsheet only after last user has deleted contact (i.e. all users have same update date/time)
-        //    - update dateArray by replacing myUpdate with newestUpdate
-        //    - if all dates (use array every function) are now the same in dateArray, then delete contact from spreadsheet
-        // dateArray[currUserNum] = newestUpdate;
-        // var oldestUpdate = new Date(Math.min.apply(null, dateArray));
-        // if (newestUpdate.toString() == oldestUpdate.toString()) {
-        //   sheet.deleteRow(i + 1)
-        //   Logger.log ("     Row deleted.");
-        // }
-        // else {
         sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-        // }
       }
 
       // Update or Add
@@ -371,7 +366,7 @@ function SpreadsheetToContacts() {
           // ADD GROUP TO MEMBERSHIPS:
 
           newMembership = {
-            "contactGroupMembership" : {
+            "contactGroupMembership": {
               "contactGroupResourceName": groupResourceName
             }
           }
@@ -409,8 +404,6 @@ function SpreadsheetToContacts() {
           "userDefined": JSON.parse(contactRows[i][24])
         };
 
-        Utilities.sleep(500); // delay is required to not exceed read/write quotas
-        
         if ((contactRows[i][(currUserNum + 1) * 2 + 23])) {
           // Update Contact from Spreadsheet
           var people = People.People.getBatchGet({
@@ -420,12 +413,13 @@ function SpreadsheetToContacts() {
           if (people.responses[0].person) {
             bodyRequest.etag = people.responses[0].person.etag;
             var personResourceName = (contactRows[i][(currUserNum + 1) * 2 + 23]);
+            Utilities.sleep(700); // delay is required to not exceed read/write quotas
             // Calendar URLs is listed as an update field, but it throws an error when included below.
-            Logger.log("     Updated Google contact " + personResourceName + ".")
             People.People.updateContact(bodyRequest, personResourceName, { updatePersonFields: "addresses,biographies,birthdays,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined" });
+            Logger.log("     Updated Google contact " + personResourceName + ".")
             sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
           }
-          else{
+          else {
             MailApp.sendEmail({
               to: statusEmail,
               subject: "GSCS Sync Conflict",
@@ -450,35 +444,23 @@ function SpreadsheetToContacts() {
   return ("complete");
 }
 
-function ContactsToSpreadsheet(updatedContacts) {
-  Logger.log("ContactsToSpreadsheet")
+function UpdatesMerge() {
+  Logger.log("UpdatesMerge")
   var dateArray = new Array();
   var column = (currUserNum + 1) * 2 + 24; //column Index   
   var columnValues2D = sheet.getRange(1, column, sheet.getLastRow()).getValues()
   var columnValues = String(columnValues2D).split(","); // convert to single dimension array
-  if (updatedContacts.connections != null) {
-    updatedContacts.connections.forEach(function (contact) {
+
+  if (mySheet.getLastRow() > 0) {
+    var myUpdates = new Array();
+    myUpdates = mySheet.getDataRange().getValues();
+    var c = 0;
+    do {
       var updateTime = new Date();
       // find contact in spreadsheet which matches updated contact from Contacts
-      searchResult = columnValues.indexOf(contact.resourceName);
-
-      contactArray = getContactArray(contact);
-
-      // remove ID tags and stringify
-      contactArray = RemoveIDandStringify(contactArray)
-
-      // Store Contact Groups
-      if (contact.memberships != null) {
-        var contactGroups = []
-        for (var i = 0; i < contact.memberships.length; i++) {
-          for (var j = 0; j < contactGroupsList.length; j++) {
-            if (contact.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
-              contactGroups[i] = contactGroupsList[j][0]
-            }
-          }
-        }
-        contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
-      }
+      searchResult = columnValues.indexOf(myUpdates[c][25]);
+      var resourceName = myUpdates[c].pop();
+      contactArray = myUpdates[c];
 
       if (searchResult != -1) {
         dateArray = [];
@@ -487,7 +469,7 @@ function ContactsToSpreadsheet(updatedContacts) {
         }
         // Update contact
 
-        Logger.log ("     Updated " + contact.resourceName + " on spreadsheet.")
+        Logger.log("     Updated " + resourceName + " on spreadsheet.")
         sheet.getRange(searchResult + 1, 1, 1, 25).setValues([contactArray]);
         sheet.getRange(searchResult + 1, (currUserNum + 1) * 2 + 25).setValue(updateTime);
       }
@@ -498,7 +480,7 @@ function ContactsToSpreadsheet(updatedContacts) {
         var resourceNamesArray = [];
         for (var i = 0; i < syncAccounts.length; i++) {
           if (currUser == syncAccounts[i]) {
-            resourceNamesArray = resourceNamesArray.concat([contact.resourceName, updateTime]);
+            resourceNamesArray = resourceNamesArray.concat([resourceName, updateTime]);
           }
           else {
             resourceNamesArray = resourceNamesArray.concat(["", ""]);
@@ -506,14 +488,24 @@ function ContactsToSpreadsheet(updatedContacts) {
         }
         // add contact to end of sheet
         var appendArray = contactArray.concat(resourceNamesArray);
-        Logger.log ("     Added " + contact.resourceName + " to spreadsheet.")
+        Logger.log("     Added " + resourceName + " to spreadsheet.")
         sheet.appendRow(appendArray);
       }
-    })
+      c++
+    }
+    while ((c < myUpdates.length) && ((new (Date) - startTime) / 1000 < 300))
   }
+
+  if (c == mySheet.getLastRow()) {
+    mySheet.clear();
+  }
+  else if (c) {
+    mySheet.deleteRows(1, c);
+  }
+
 }
 
-function getContactArray (contact) {
+function getContactArray(contact) {
   return ([contact.addresses, contact.biographies, contact.birthdays, contact.calendarUrls, contact.clientData, contact.emailAddresses, contact.events, contact.externalIds, contact.genders, contact.imClients, contact.interests, contact.locales, contact.locations, contact.memberships, contact.metadata, contact.miscKeywords, contact.names, contact.nicknames, contact.occupations, contact.organizations, contact.phoneNumbers, contact.relations, contact.sipAddresses, contact.urls, contact.userDefined]);
 }
 
@@ -559,13 +551,15 @@ function RefreshSyncToken() {
 
   var newSyncToken = connections.nextSyncToken;
   syncTokenFile.setContent(newSyncToken);
-  return(newSyncToken);
+  return (newSyncToken);
 }
 
-function getUpdatedContacts() {
-  Logger.log("getUpdatedContacts")
+function GetUpdatedContacts() {
+  Logger.log("GetUpdatedContacts")
   var pageToken;
-
+  var updatedContactsArray = new Array();
+  var appendArray = new Array();
+  var n = 0;
   var syncTokenFiles = DriveApp.getFilesByName(syncTokenFileName);
   var syncTokenFile = syncTokenFiles.next();
   var syncToken = syncTokenFile.getBlob().getDataAsString("utf8");
@@ -583,7 +577,7 @@ function getUpdatedContacts() {
       });
     }
     catch {
-      Logger.log ("Sync token error.  Refreshing token.");
+      Logger.log("Sync token error.  Refreshing token.");
       syncTokenExpired = true;
       syncToken = RefreshSyncToken();
       syncTokenExpired = false;
@@ -594,20 +588,49 @@ function getUpdatedContacts() {
         htmlBody: "There was a syncToken error while synchronizing.  Synchronizations may have been lost.  Please check your contacts."
       })
     }
+
+    try {
+      connections.connections.forEach(function (person) {
+        var contactArray = [person.addresses, person.biographies, person.birthdays, person.calendarUrls, person.clientData, person.emailAddresses, person.events, person.externalIds, person.genders, person.imClients, person.interests, person.locales, person.locations, person.memberships, person.metadata, person.miscKeywords, person.names, person.nicknames, person.occupations, person.organizations, person.phoneNumbers, person.relations, person.sipAddresses, person.urls, person.userDefined];
+
+        contactArray = RemoveIDandStringify(contactArray)
+
+        // add Contact Groups to array to be saved in spreadsheet
+        var contactGroups = []
+        try {
+          for (var i = 0; i < person.memberships.length; i++) {
+            for (var j = 0; j < contactGroupsList.length; j++) {
+              if (person.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
+                contactGroups[i] = contactGroupsList[j][0]
+              }
+            }
+          }
+        }
+        catch { }
+
+        contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
+
+        appendArray = contactArray.concat(person.resourceName);
+
+        updatedContactsArray[n] = appendArray;
+        n++;
+      })
+      pageToken = connections.nextPageToken;
+    }
+    catch { }
+
+
   }
   while (pageToken || refreshedSyncToken == true);
-  
-  try {
-    Logger.log("     Retrieved " + connections.connections.length + " updated contact(s) from user account.")
+
+  if (updatedContactsArray.length > 0) {
+    Logger.log("     " + updatedContactsArray.length + " contacts queued for update.")
+    mySheet.getRange(mySheet.getLastRow() + 1, 1, updatedContactsArray.length, appendArray.length).setValues(updatedContactsArray);
   }
-  catch {
-    Logger.log("     Retrieved 0 updated contacts from user account.")
-  }
-  return (connections);
 }
 
 function getContactGroupsList() {
-  Logger.log("getContactsGroupsList")
+  Logger.log("getContactGroupsList")
   var contactGroupsListJSON = People.ContactGroups.list({
     "groupFields": "name",
     "pageSize": 1000 // no more than 1000 contact groups
@@ -622,4 +645,57 @@ function getContactGroupsList() {
 function showElapsedTime() {
   executionTime = (new (Date) - startTime) / 1000
   Logger.log("     Elapsed Time: " + executionTime + " seconds.")
+}
+
+function dailyMaintenance() {
+  Logger.log("dailyMaintenance")
+  var rowsDeleted = 0;
+  // remove all users' permissions on spreadsheets
+  for (var i = 0; i < syncAccounts.length; i++) {
+    if (syncAccounts[i] != currUser) {
+      ss.removeEditor(syncAccounts[i])
+    }
+  }
+
+  // keep user triggers from running
+  deleteAllTriggers();
+
+  // delete any deleted contact rows from spreadsheet with "deleted":"true
+  var column = 15; // 15th column is where '"delete": true' is stored
+  var deleteTrueColumns = sheet.getRange(1, column, sheet.getLastRow()).getValues()
+  var dateArray = new Array();
+  var contactRows = sheet.getDataRange().getValues();
+
+  for (var i = deleteTrueColumns.length - 1; i > 0; i--) {
+    for (var j = 0; j < deleteTrueColumns[i].length; j++) {
+      if (deleteTrueColumns[i][j].includes("\"deleted\":true")) {
+        dateArray = [];
+        for (var s = 0; s < syncAccounts.length; s++) {
+          if (contactRows[i][(s * 2) + 26].length > 0) { // if update time is missing, then don't add it
+            dateArray.push(contactRows[i][(s * 2) + 26])
+          }
+        }
+        var oldestUpdate = new Date(Math.min.apply(null, dateArray));
+        var newestUpdate = new Date(Math.max.apply(null, dateArray));
+        // only delete if all updte times are the same or missing (they've either all been deleted or they've never been added)
+        if (newestUpdate.toString() == oldestUpdate.toString()) {
+          sheet.deleteRow(i + 1);
+          rowsDeleted++;
+        }
+      }
+    }
+  }
+  Logger.log("     Rows deleted: " + rowsDeleted)
+
+  // recreate triggers for master account
+  createSyncContactsTrigger();
+  // createDailyMaintenanceTrigger();
+
+  // restore users' permissions for spreadsheet
+
+  for (var i = 0; i < syncAccounts.length; i++) {
+    if (syncAccounts[i] != currUser) {
+      ss.addEditor(syncAccounts[i])
+    }
+  }
 }
