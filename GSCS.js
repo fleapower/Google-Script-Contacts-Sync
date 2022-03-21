@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 2.0 Beta
+GSCS (Google Scripts Contact Sync) Version 2.1 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
@@ -20,7 +20,7 @@ Before setting up the script, you need to put all of your contacts into a single
 6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
 */
 
-var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsdomain.com'];
+var syncAccounts = ['juli@casadebaca.com', 'jbbaca@gmail.com'];
 
 /**
 7)  Open a new tab in your browser and go to https://drive.google.com from your master account.
@@ -30,17 +30,25 @@ var syncAccounts = ['email1@gmail.com', 'email2@gmail.com', 'email@mygoogleappsd
 11) Paste the document ID of the spreadsheet here:
 */
 
-var ss = SpreadsheetApp.openById('############################################');
+var ss = SpreadsheetApp.openById('1wWN_afW2zntXBiCzKviPMwmYpYUMHWiluWx0MMikchA');
 
 /**
-12) Go back to your script in your master account.
-13) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
-14) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
-15) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
-16) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
+12) Create an empty text file on your computer and then upload it to your Google drive.  It does not matter where you put the file in your Google drive.  However, for convenience, just put it in the directory with the spreadsheet:
+
+YOUR_EMAIL_ADDRESS@gmail.com_PeopleSyncToken.txt
+
+Replace the placeholder email address with the email address from your master account.
+13) Do step 12 for all of the accounts you plan to sync.  For client accounts, you can put the file wherever is most convenient.
+14) Go back to your script in your master account.
+15) Click the plus sign next to "Services" on the left side of the screen.
+16) Select "Peopleapi" in the list and click OK.
+17) Select "MasterInit" from the function pulldown and click "Run."  Permission will need to be granted for the script to run.  Initialization will take about 1 minute for every 5,000 contacts you have.
+18) Next, log into each of the client accounts and view the shared script (or the copied script if you created a separate copy).
+19) Select "ClientInit" from the function pulldown and click "Run."  Again, permission will need to be granted.  Because of Google's read/write quotas, this will take a very long time - about an hour for every 1,000 contacts you have in the master acount.  IMPORTANT: DO NOT make changes in any account until the client receives an email that the client initialization is done.  The script is fairly robust in handling errors, but if you make changes (especially deleting contacts), synchronization could be broken for some contacts and the script itself could stop working.  ClientInit should work simultaneously for multiple accounts, but it has not been tested.
+20) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
 */
 
-var statusEmail = 'email@gmail.com'
+var statusEmail = 'jbbaca@gmail.com'
 
 /**
 
@@ -70,7 +78,7 @@ Method 2 (more thorough, but more complex):
 4)  Delete the user account email from "syncAccounts."
 5)  Run the "createSyncContactsTrigger" while logged into each account (master and client).
 
-Method 3 (simpler than method #1, most thorough, but longer):
+Method 3 (simpler than methods #1 and #2, most thorough, but longer):
 
 1)  Delete all triggers for all users.
 2)  Follow the initial setup instructions.
@@ -78,15 +86,13 @@ Method 3 (simpler than method #1, most thorough, but longer):
 
 KNOWN ISSUES
 
-1)  RESOLVED IN 2.0.  Contact groups do not sync reliably.  The last few versions have improved this immensely, and I haven't seen any problems recently, but I still don't trust it.  I'm still working on this issue.  It is highly recommended you occasionally confirm labels are the same between groups and especially after initial synchronization.
-2)  RESOLVED IN 2.0.  If you need to update more than 300 contacts, do it in increments of less than 300.  For example, if you need to update 400 contacts, do it in two batches of 200 and wait until the first sync cycle is complete (20 minutes) before doing the second 200.  An alternative is to delete all project triggers from all accounts and go through the setup instructions again (you can use the same spreadsheet).
-3)  Google is very sensitive about quotas, and the script will occasionally bust a quota.  However, as mentioned earlier, the algorithm is very robust in handling errors.  Synchronization errors should resolve themselves after a few executions.
-4)  Because Google contacts were never intended to be synchronized between multiple accounts, there is a slight possibility that a contact will not be synchronized if a user updates the contact in the few seconds between their own contacts being updated and a new sync token being generated.  Given typical script runtimes, this is about a 1:300 chance this will happen.  If you notice an unsync'd contact, simply making a small change to the contact (adding a label and then removing it) will force a resync.
+1)  Google is very sensitive about quotas, and the script will occasionally bust a quota.  However, as mentioned earlier, the algorithm is very robust in handling errors.  Synchronization errors should resolve themselves after a few executions.
+2)  Because Google contacts were never intended to be synchronized between multiple accounts, there is a slight possibility that a contact will not be synchronized if a user updates the contact in the few seconds between their own contacts being updated and a new sync token being generated.  Given typical script runtimes, this is about a 1:300 chance this will happen.  If you notice an unsync'd contact, simply making a small change to the contact (adding a label and then removing it) will force a resync.
 
 
 PROBLEM REPORTING OR TROUBLESHOOTING
 
-If you have problems, please post it on GitHub and I will address it as soon as possible: https://github.com/fleapower/Google-Script-Contacts-Sync/issues.  If possible, include the log from the script's executions page.
+If you have problems, please post it on GitHub and I will address it as soon as possible: https://github.com/fleapower/Google-Script-Contacts-Sync/issues.  If possible, include the log from the script's executions page (please note, your email address may be captured in the log - be sure to use hashtags vice your email address, e.g., #######@gmail.com).
 
 */
 
