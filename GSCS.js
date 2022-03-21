@@ -20,7 +20,7 @@ Before setting up the script, you need to put all of your contacts into a single
 6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
 */
 
-var syncAccounts = ['juli@casadebaca.com', 'jbbaca@gmail.com'];
+var syncAccounts = ['email1@gmail.com', 'email2.com'];
 
 /**
 7)  Open a new tab in your browser and go to https://drive.google.com from your master account.
@@ -30,12 +30,12 @@ var syncAccounts = ['juli@casadebaca.com', 'jbbaca@gmail.com'];
 11) Paste the document ID of the spreadsheet here:
 */
 
-var ss = SpreadsheetApp.openById('1wWN_afW2zntXBiCzKviPMwmYpYUMHWiluWx0MMikchA');
+var ss = SpreadsheetApp.openById('############################################');
 
 /**
 12) Create an empty text file on your computer and then upload it to your Google drive.  It does not matter where you put the file in your Google drive.  However, for convenience, just put it in the directory with the spreadsheet:
 
-YOUR_EMAIL_ADDRESS@gmail.com_PeopleSyncToken.txt
+email1@gmail.com_PeopleSyncToken.txt
 
 Replace the placeholder email address with the email address from your master account.
 13) Do step 12 for all of the accounts you plan to sync.  For client accounts, you can put the file wherever is most convenient.
@@ -48,7 +48,7 @@ Replace the placeholder email address with the email address from your master ac
 20) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
 */
 
-var statusEmail = 'jbbaca@gmail.com'
+var statusEmail = 'email1@gmail.com'
 
 /**
 
