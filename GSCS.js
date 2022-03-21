@@ -38,7 +38,7 @@ var ss = SpreadsheetApp.openById('############################################')
 email1@gmail.com_PeopleSyncToken.txt
 
 Replace the placeholder email address with the email address from your master account.
-13) Do step 12 for all of the accounts you plan to sync.  For client accounts, you can put the file wherever is most convenient.
+13) Do step 12 for all of the accounts you plan to sync by using that account's email address.  For client accounts, you can put the file wherever is most convenient.
 14) Go back to your script in your master account.
 15) Click the plus sign next to "Services" on the left side of the screen.
 16) Select "Peopleapi" in the list and click OK.
