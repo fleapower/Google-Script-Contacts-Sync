@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 2.1 Beta
+GSCS (Google Scripts Contact Sync) Version 2.2 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
@@ -20,7 +20,7 @@ Before setting up the script, you need to put all of your contacts into a single
 6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
 */
 
-var syncAccounts = ['email1@gmail.com', 'email2.com'];
+var syncAccounts = ['email1@casadebaca.com', 'email2@gmail.com'];
 
 /**
 7)  Open a new tab in your browser and go to https://drive.google.com from your master account.
@@ -30,12 +30,12 @@ var syncAccounts = ['email1@gmail.com', 'email2.com'];
 11) Paste the document ID of the spreadsheet here:
 */
 
-var ss = SpreadsheetApp.openById('############################################');
+var ss = SpreadsheetApp.openById('############################################/');
 
 /**
 12) Create an empty text file on your computer and then upload it to your Google drive.  It does not matter where you put the file in your Google drive.  However, for convenience, just put it in the directory with the spreadsheet:
 
-email1@gmail.com_PeopleSyncToken.txt
+YOUR_EMAIL_ADDRESS@gmail.com_PeopleSyncToken.txt
 
 Replace the placeholder email address with the email address from your master account.
 13) Do step 12 for all of the accounts you plan to sync by using that account's email address.  For client accounts, you can put the file wherever is most convenient.
@@ -115,7 +115,10 @@ var syncTokenExpired = false;
 var contactGroupsList = getContactGroupsList();
 
 function MasterInit() {
-  ss.insertSheet(currUser);
+  try {
+    ss.insertSheet(currUser);
+  }
+  catch {}
   RefreshSyncToken();
   deleteAllTriggers();
   var n = 0;
