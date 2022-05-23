@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 2.3 Beta
+GSCS (Google Script Contacts Sync) Version 2.3 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
