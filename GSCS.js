@@ -1,6 +1,6 @@
 /**
 
-GSCS (Google Scripts Contact Sync) Version 2.2 Beta
+GSCS (Google Scripts Contact Sync) Version 2.3 Beta
 
 This script is intended to synchronize all contacts between Google users.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
 
@@ -20,7 +20,7 @@ Before setting up the script, you need to put all of your contacts into a single
 6)  Change the "syncAccounts" variable below to include the email addresses of the accounts you wish the synchronize.  Note: If you are setting up multiple scripts and not using a shared script, you need to ensure the email addresses are listed in the same order across all scripts.
 */
 
-var syncAccounts = ['email1@casadebaca.com', 'email2@gmail.com'];
+var syncAccounts = ['email1@gmail.com', 'email2@yourdomain.com'];
 
 /**
 7)  Open a new tab in your browser and go to https://drive.google.com from your master account.
@@ -30,10 +30,10 @@ var syncAccounts = ['email1@casadebaca.com', 'email2@gmail.com'];
 11) Paste the document ID of the spreadsheet here:
 */
 
-var ss = SpreadsheetApp.openById('############################################');
+var ss = SpreadsheetApp.openById('/############################################');
 
 /**
-12) Create an empty text file on your computer and then upload it to your Google drive.  It does not matter where you put the file in your Google drive.  However, for convenience, just put it in the directory with the spreadsheet:
+12) Create an empty text file on your computer and then upload it to your Google drive (be sure the option to automatically convert uploaded files to Google file format is turned OFF).  It does not matter where you put the file in your Google drive.  However, for convenience, just put it in the directory with the spreadsheet:
 
 YOUR_EMAIL_ADDRESS@gmail.com_PeopleSyncToken.txt
 
@@ -48,7 +48,7 @@ Replace the placeholder email address with the email address from your master ac
 20) Set the following variable to the email address where status emails should be sent which the script occasionally generates.
 */
 
-var statusEmail = 'email1@gmail.com'
+var statusEmail = 'yourstatusemail@gmail.com'
 
 /**
 
@@ -57,10 +57,11 @@ All triggers for the script are set by the script itself.
 
 ADD USERS
 
-1)  Add the new email to the end of the list of email addresses in the syncAccounts variable above.
-2)  Grant editor access or create a copy of the script itself for the client.
-3)  Share the spreadsheet with the client giving edit access.
-4)  Run ClientInit from the client's account.
+1)  Create the synctoken file in the new users Google Drive. (YOUR_EMAIL_ADDRESS@gmail.com_PeopleSyncToken.txt)
+2)  Add the new email to the end of the list of email addresses in the syncAccounts variable above.
+3)  Grant editor access or create a copy of the script itself for the client.
+4)  Share the spreadsheet with the client giving edit access.
+5)  Run ClientInit from the client's account.
 
 
 DELETE USERS
@@ -522,6 +523,7 @@ function RefreshSyncToken() {
   Logger.log("RefreshSynctoken")
   var i = 0;
   var pageToken;
+  Logger.log(syncTokenFileName);
   var syncTokenFiles = DriveApp.getFilesByName(syncTokenFileName);
   var syncTokenFile = syncTokenFiles.next();
   var syncToken = syncTokenFile.getBlob().getDataAsString("utf8");
