@@ -1,5 +1,8 @@
 # Google-Script-Contacts-Sync
-Synchronize Google contacts across multiple Google accounts.
+
+This script is intended to synchronize all contacts between multiple Google users' accounts.  It could be modified to share only specific groups, but that is beyond the scope of my own needs.  Please feel free to modify it if you desire to synchronize only specific groups.
+
+I'm not a professional programmer and wouldn't really even call myself a hobbyist.  I needed contacts synchronization and the options at hand were either too expensive, unreliable, or didn't have the features I needed (primarily group synchronization), so I Frankensteined this thing together.  After writing this script, I can see why so many of the synchronization tools available now do not have group synchronization - it was the most difficult part of the script to get to run somewhat reliably.
 
 v2.3 Beta changelog:
 - Added a few items to the instructions to provide greater granularity to setup to hopefully avoid errors.
