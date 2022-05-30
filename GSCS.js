@@ -30,7 +30,7 @@ var syncAccounts = ['email1@gmail.com', 'email2@yourdomain.com'];
 11) Paste the document ID of the spreadsheet here:
 */
 
-var ss = SpreadsheetApp.openById('/############################################');
+var ss = SpreadsheetApp.openById('############################################');
 
 /**
 12) Create an empty text file on your computer and then upload it to your Google drive (be sure the option to automatically convert uploaded files to Google file format is turned OFF).  It does not matter where you put the file in your Google drive.  However, for convenience, just put it in the directory with the spreadsheet:
