@@ -97,10 +97,39 @@ If you have problems, please post it on GitHub and I will address it as soon as 
 
 */
 
+var label1 = ss.getRange('A1');
+var label2 = ss.getRange('B1');
+var label3 = ss.getRange('C1');
+var label4 = ss.getRange('D1');
+var label5 = ss.getRange('E1');
+var label6 = ss.getRange('F1');
+var label7 = ss.getRange('G1');
+var label8 = ss.getRange('H1');
+var label9 = ss.getRange('I1');
+var label14 = ss.getRange('N1');
+var label16 = ss.getRange('O1');
+var label17 = ss.getRange('P1');
+function writeValueToCells() {
+  label1.setValue('Name')
+  label2.setValue('Phone Number')
+  label3.setValue('Email')
+  label4.setValue('Company')
+  label5.setValue('Street Address')
+  label6.setValue('City')
+  label7.setValue('Region')
+  label8.setValue('Postal Code')
+  label9.setValue('Country')
+  label14.setValue('Contact Group')
+  label16.setValue('Etag')
+  label17.setValue('Date')
+
+};
+
+
 var startTime = new Date();
 
 var currUser = Session.getEffectiveUser().getEmail();
-Logger.log(currUser)
+Logger.log(currUser);
 var currUserNum = syncAccounts.indexOf(currUser);
 
 var sheet = ss.getSheets()[0];
@@ -109,81 +138,143 @@ var mySheet = ss.getSheetByName(currUser);
 var syncTokenFileName = currUser + "_PeopleSyncToken.txt";
 
 var pageSize = 2000;
-var masterPersonFields = 'addresses,biographies,birthdays,calendarUrls,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,metadata,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined'
+var masterPersonFields =
+  "addresses,biographies,birthdays,calendarUrls,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,metadata,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined";
 
 var syncTokenExpired = false;
+
 
 var contactGroupsList = getContactGroupsList();
 
 function MasterInit() {
   try {
     ss.insertSheet(currUser);
-  }
-  catch {}
+  } catch {}
   RefreshSyncToken();
+    // removeDuplicates();
   deleteAllTriggers();
   var n = 0;
   var appendArray = new Array();
   var updateTime = new Date();
   var allContactsArray = new Array();
+  
   // Initialize sheet by deleting all rows
   if (sheet.getLastRow() > 1) {
     sheet.deleteRows(1, sheet.getLastRow() - 1);
   }
-  sheet.getRange("A1:BB1").clear();
+ 
+  // sheet.getRange("A1:BB1").clear();
+   ss.getRange("A1:BB20000").setFontFamily("Inconsolata").setFontSize(11);
+writeValueToCells();
+ss.getRange('A1:BB1').setBackground("#70A89A");
+ss.getRange('A1:BB1').setFontWeight("bold");
 
   var pageToken;
   do {
-    var connections = People.People.Connections.list('people/me', {
+    var connections = People.People.Connections.list("people/me", {
       pageToken: pageToken,
       pageSize: pageSize,
       requestSyncToken: true,
       personFields: masterPersonFields,
-      sources: ["READ_SOURCE_TYPE_CONTACT"] // we can't update DOMAIN or PROFILE so CONTACT source is specified (must be consisten through all other calls or sync tokens won't work)
+      sources: ["READ_SOURCE_TYPE_CONTACT"], // we can't update DOMAIN or PROFILE so CONTACT source is specified (must be consisten through all other calls or sync tokens won't work)
+      
     });
 
     connections.connections.forEach(function (person) {
-      var contactArray = [person.addresses, person.biographies, person.birthdays, person.calendarUrls, person.clientData, person.emailAddresses, person.events, person.externalIds, person.genders, person.imClients, person.interests, person.locales, person.locations, person.memberships, person.metadata, person.miscKeywords, person.names, person.nicknames, person.occupations, person.organizations, person.phoneNumbers, person.relations, person.sipAddresses, person.urls, person.userDefined];
+
+if (person.organizations === undefined) {
+  var organization = ' ';
+} else {
+  var organization = person.organizations[0].name;
+}
+if (person.names === undefined) {
+  var name = ' ';
+} else {
+  var name = person.names[0].displayName;
+}
+if (person.phoneNumbers === undefined) {
+  var phoneNumber = ' ';
+} else {
+  var phoneNumber = person.phoneNumbers[0].canonicalForm;
+}
+if (person.emailAddresses === undefined) {
+  var emailAddress = ' ';
+} else {
+  var emailAddress = person.emailAddresses[0].value;
+}
+if (person.addresses === undefined) {
+  var streetAddress = ' ';
+} else {
+  var streetAddress = person.addresses[0].streetAddress;
+}
+if (person.addresses === undefined) {
+  var city = ' ';
+} else {
+  var city = person.addresses[0].city;
+}
+if (person.addresses === undefined) {
+  var region = ' ';
+} else {
+  var region = person.addresses[0].region;
+}
+if (person.addresses === undefined) {
+  var countryCode = ' ';
+} else {
+  var countryCode = person.addresses[0].countryCode;
+}
+if (person.addresses === undefined) {
+  var postalCode = ' ';
+} else {
+  var postalCode = person.addresses[0].postalCode;
+}
+var contactArray = [name, phoneNumber, emailAddress, organization, streetAddress, city, region, postalCode, countryCode];
 
       // remove ID tags and stringify
-      contactArray = RemoveIDandStringify(contactArray)
-
+      contactArray = RemoveIDandStringify(contactArray);
+      // removePriorDuplicates(contactArray);
       // append array with individual user's resourceNames
       var resourceNamesArray = [];
       for (var i = 0; i < syncAccounts.length; i++) {
         if (currUser == syncAccounts[i]) {
-          resourceNamesArray = resourceNamesArray.concat([person.resourceName, updateTime]);
-        }
-        else {
+          resourceNamesArray = resourceNamesArray.concat([
+            person.resourceName,
+            updateTime,
+          ]);
+        } else {
           resourceNamesArray = resourceNamesArray.concat(["", 0]);
         }
       }
 
       // add Contact Groups to array to be saved in spreadsheet
-      var contactGroups = []
+      var contactGroups = [];
       for (var i = 0; i < person.memberships.length; i++) {
         for (var j = 0; j < contactGroupsList.length; j++) {
-          if (person.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
-            contactGroups[i] = contactGroupsList[j][0]
+          if (
+            person.memberships[i].contactGroupMembership
+              .contactGroupResourceName == contactGroupsList[j][1]
+          ) {
+            contactGroups[i] = contactGroupsList[j][0];
           }
         }
       }
-      contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
+      
+      contactArray[13] = contactGroups.join(","); // 14th column is where memberships are; will need to be changed if script updated
 
       // complete apendArray
       appendArray = contactArray.concat(resourceNamesArray);
 
       // append allContactsArray with new contact
       allContactsArray[n] = appendArray;
-      Logger.log(n)
+      Logger.log(n);
       n++;
       pageToken = connections.nextPageToken;
     });
-  }
-  while (pageToken);
+  } while (pageToken);
 
   // write entire contacts array to spreadsheet
-  sheet.getRange(1, 1, allContactsArray.length, appendArray.length).setValues(allContactsArray);
+  sheet
+    .getRange(2, 1, allContactsArray.length, appendArray.length)
+    .setValues(allContactsArray);
 
   // Set Synctoken
   var syncTokenFiles = DriveApp.getFilesByName(syncTokenFileName);
@@ -198,7 +289,6 @@ function MasterInit() {
 }
 
 function ClientInit() {
-
   // delete all triggers since ClientInit will create another
   deleteAllTriggers();
 
@@ -213,13 +303,11 @@ function ClientInit() {
   // run SpreadsheetToContacts until initial sync is done
 
   var completedStatus = SpreadsheetToContacts();
-
   // if SpreadsheetToContacts fully completes, delete all triggers and create new trigger
   if (completedStatus == "complete") {
     deleteAllTriggers();
     // refreshSyncToken to start syncing normally from this point
     RefreshSyncToken();
-
     // create user contacts sync queue
     ss.insertSheet(currUser);
 
@@ -232,13 +320,16 @@ function ClientInit() {
     MailApp.sendEmail({
       to: statusEmail,
       subject: "GS Contacts Sync is Synchronizing!",
-      htmlBody: "The initial contact sync for " + currUser + " is complete!  Contacts may be added, modified, or deleted as usual."
-    })
+      htmlBody:
+        "The initial contact sync for " +
+        currUser +
+        " is complete!  Contacts may be added, modified, or deleted as usual.",
+    });
   }
 }
 
 function deleteAllTriggers() {
-  Logger.log ("  deleteAllTriggers")
+  Logger.log("  deleteAllTriggers");
   var triggers = ScriptApp.getProjectTriggers();
   for (var i in triggers) {
     if (triggers[i].getHandlerFunction() != "dailyMaintenance") {
@@ -258,7 +349,7 @@ function createDailyMaintenanceTrigger() {
   ScriptApp.newTrigger("dailyMaintenance")
     .timeBased()
     .atHour(3)
-    .everyDays(1)  // maintenance will run every 24 hours
+    .everyDays(1) // maintenance will run every 24 hours
     .create();
 }
 
@@ -271,6 +362,7 @@ function syncContacts() {
   UpdatesMerge();
   showElapsedTime();
   SpreadsheetToContacts();
+
   showElapsedTime();
   // it appears refreshing the sync token too quickly after updates does not capture the most recent updates
   // this does leave open the possibility that contacts which are updated during this interval or while the script is running will not be synchronized
@@ -283,182 +375,211 @@ function RemoveIDandStringify(contactArray) {
   // remove ID tags and stringify
   for (var i = 0; i < contactArray.length; i++) {
     if (contactArray[i]) {
-      removeID(contactArray[i])
+      removeID(contactArray[i]);
     }
     if (contactArray[i]) {
-      contactArray[i] = JSON.stringify(contactArray[i])
-    }
-    else {
-      contactArray[i] = {}
+      contactArray[i] = JSON.stringify(contactArray[i]).replace("[", "").replace("\"", "").replace("\",", "").replace("]", "").replace(']', '').replace({});
+    } else {
+      contactArray[i] = {};
     }
   }
-  return (contactArray)
+  return contactArray;
 }
 
 function removeID(obj) {
   for (prop in obj) {
-    if (prop === 'id')
-      delete obj[prop];
-    else if (typeof obj[prop] === 'object')
-      removeID(obj[prop]);
+    if (prop === "id") delete obj[prop];
+    else if (typeof obj[prop] === "object") removeID(obj[prop]);
   }
 }
-
+// function removeDuplicates() {
+//   var spread = SpreadsheetApp.getActiveSheet();
+//   var range = spread.getRange(1, spread.getLastRow()); // Column A and B
+//   range.removeDuplicates(range);
+// }
 function SpreadsheetToContacts() {
-
-  Logger.log("SpreadsheetToContacts")
+  Logger.log("SpreadsheetToContacts");
 
   var dateArray = new Array();
+  var allNewNames = new Array();
   var allNewMemberships = new Array();
   var newMembership;
   var contactRows = sheet.getDataRange().getValues();
 
   for (var i = 0; i < contactRows.length; i++) {
-
     allNewMemberships = [];
-
+// specific values from contacts array
     //get latest updateTime
     dateArray = [];
     for (var s = 0; s < syncAccounts.length; s++) {
-      dateArray.push(contactRows[i][(s * 2) + 26])
+      dateArray.push(contactRows[i][s * 2 + 26]);
     }
     if (!dateArray[currUserNum]) {
-      dateArray[currUserNum] = 0
+      dateArray[currUserNum] = 0;
     }
 
     var newestUpdate = new Date(Math.max.apply(null, dateArray));
-    var myUpdate = contactRows[i][(currUserNum * 2) + 26]
+    var myUpdate = contactRows[i][currUserNum * 2 + 26];
 
     //compare it to my updateTime
     if (myUpdate == null || newestUpdate > myUpdate) {
-
       // Delete
-      if (contactRows[i][14].includes("\"deleted\":true")) {
+      if (contactRows[i][14].includes('"deleted":true')) {
         try {
-          People.People.deleteContact(contactRows[i][(currUserNum + 1) * 2 + 23]);
-          Logger.log("     Successfully deleted contact " + contactRows[i][(currUserNum + 1) * 2 + 23] + " from Google account.")
+          People.People.deleteContact(
+            contactRows[i][(currUserNum + 1) * 2 + 23]
+          );
+          Logger.log(
+            "     Successfully deleted contact " +
+              contactRows[i][(currUserNum + 1) * 2 + 23] +
+              " from Google account."
+          );
+        } catch {
+          Logger.log(
+            "     Had to use alternate delete.  " +
+              contactRows[i][(currUserNum + 1) * 2 + 23] +
+              " did not exist."
+          );
         }
-        catch {
-          Logger.log("     Had to use alternate delete.  " + contactRows[i][(currUserNum + 1) * 2 + 23] + " did not exist.")
-        }
-        sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
+        sheet
+          .getRange(i + 1, (currUserNum + 1) * 2 + 25)
+          .setValue(newestUpdate);
       }
 
       // Update or Add
       else {
-        LabelString = sheet.getRange(i + 1, 14).getValue()
-        Labels = LabelString.split(",")
+        LabelString = sheet.getRange(i + 1, 14).getValue();
+        Labels = LabelString.split(",");
 
         // Add groups to new/updated contacts groups
         for (var j = 0; j < Labels.length; j++) {
           // CHECK IF GROUP EXISTS:
           var groupName = Labels[j];
-          var groupIndex = contactGroupsList.map(data => data[0]).indexOf(groupName);
+          var groupIndex = contactGroupsList
+            .map((data) => data[0])
+            .indexOf(groupName);
 
           // CREATE GROUP IF DOESN'T EXIST:
           if (groupIndex == -1) {
             var groupResource = {
               contactGroup: {
-                name: groupName
-              }
-            }
+                name: groupName,
+              },
+            };
             group = People.ContactGroups.create(groupResource);
             var groupResourceName = group.resourceName;
-            contactGroupsList.push([groupName, groupResourceName])
-            Logger.log("     Created group " + groupName + ".")
-            Utilities.sleep(2000) // for some reason, Google needs a delay after creating a group before adding a contact or Google can't find the group and will throw an error
-          }
-
-          else {
-            var groupResourceName = contactGroupsList.map(data => data[1])[groupIndex];
+            contactGroupsList.push([groupName, groupResourceName]);
+            Logger.log("     Created group " + groupName + ".");
+            Utilities.sleep(2000); // for some reason, Google needs a delay after creating a group before adding a contact or Google can't find the group and will throw an error
+          } else {
+            var groupResourceName = contactGroupsList.map((data) => data[1])[
+              groupIndex
+            ];
           }
 
           // ADD GROUP TO MEMBERSHIPS:
 
           newMembership = {
-            "contactGroupMembership": {
-              "contactGroupResourceName": groupResourceName
-            }
-          }
+            contactGroupMembership: {
+              contactGroupResourceName: groupResourceName,
+            },
+          };
 
-          allNewMemberships = allNewMemberships.concat(newMembership)
-
+          allNewMemberships = allNewMemberships.concat(newMembership);
         }
 
         var bodyRequest = {
-          "etag": "",
-          "addresses": JSON.parse(contactRows[i][0]),
-          "biographies": JSON.parse(contactRows[i][1]),
-          "birthdays": JSON.parse(contactRows[i][2]),
-          "calendarUrls": JSON.parse(contactRows[i][3]),
-          "clientData": JSON.parse(contactRows[i][4]),
-          "emailAddresses": JSON.parse(contactRows[i][5]),
-          "events": JSON.parse(contactRows[i][6]),
-          "externalIds": JSON.parse(contactRows[i][7]),
-          "genders": JSON.parse(contactRows[i][8]),
-          "imClients": JSON.parse(contactRows[i][9]),
-          "interests": JSON.parse(contactRows[i][10]),
-          "locales": JSON.parse(contactRows[i][11]),
-          "locations": JSON.parse(contactRows[i][12]),
-          "memberships": allNewMemberships,
-          "metadata": JSON.parse(contactRows[i][14]),
-          "miscKeywords": JSON.parse(contactRows[i][15]),
-          "names": JSON.parse(contactRows[i][16]),
-          "nicknames": JSON.parse(contactRows[i][17]),
-          "occupations": JSON.parse(contactRows[i][18]),
-          "organizations": JSON.parse(contactRows[i][19]),
-          "phoneNumbers": JSON.parse(contactRows[i][20]),
-          "relations": JSON.parse(contactRows[i][21]),
-          "sipAddresses": JSON.parse(contactRows[i][22]),
-          "urls": JSON.parse(contactRows[i][23]),
-          "userDefined": JSON.parse(contactRows[i][24])
+          etag: "",
+          addresses: JSON.parse(contactRows[i][0]),
+          biographies: JSON.parse(contactRows[i][1]),
+          birthdays: JSON.parse(contactRows[i][2]),
+          calendarUrls: JSON.parse(contactRows[i][3]),
+          clientData: JSON.parse(contactRows[i][4]),
+          emailAddresses: JSON.parse(contactRows[i][5]),
+          events: JSON.parse(contactRows[i][6]),
+          externalIds: JSON.parse(contactRows[i][7]),
+          genders: JSON.parse(contactRows[i][8]),
+          imClients: JSON.parse(contactRows[i][9]),
+          interests: JSON.parse(contactRows[i][10]),
+          locales: JSON.parse(contactRows[i][11]),
+          locations: JSON.parse(contactRows[i][12]),
+          memberships: allNewMemberships,
+          metadata: JSON.parse(contactRows[i][14]),
+          miscKeywords: JSON.parse(contactRows[i][15]),
+          names: JSON.parse(contactRows[i][16]),
+          nicknames: JSON.parse(contactRows[i][17]),
+          occupations: JSON.parse(contactRows[i][18]),
+          organizations: JSON.parse(contactRows[i][19]),
+          phoneNumbers: JSON.parse(contactRows[i][20]),
+          relations: JSON.parse(contactRows[i][21]),
+          sipAddresses: JSON.parse(contactRows[i][22]),
+          urls: JSON.parse(contactRows[i][23]),
+          userDefined: JSON.parse(contactRows[i][24]),
         };
 
-        if ((contactRows[i][(currUserNum + 1) * 2 + 23])) {
+        if (contactRows[i][(currUserNum + 1) * 2 + 23]) {
           // Update Contact from Spreadsheet
           var people = People.People.getBatchGet({
-            resourceNames: [(contactRows[i][(currUserNum + 1) * 2 + 23])],
-            personFields: 'metadata'
+            resourceNames: [contactRows[i][(currUserNum + 1) * 2 + 23]],
+            personFields: "metadata",
           });
           if (people.responses[0].person) {
             bodyRequest.etag = people.responses[0].person.etag;
-            var personResourceName = (contactRows[i][(currUserNum + 1) * 2 + 23]);
+            var personResourceName = contactRows[i][(currUserNum + 1) * 2 + 23];
             Utilities.sleep(700); // delay is required to not exceed read/write quotas
             // Calendar URLs is listed as an update field, but it throws an error when included below.
-            People.People.updateContact(bodyRequest, personResourceName, { updatePersonFields: "addresses,biographies,birthdays,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined" });
-            Logger.log("     Updated Google contact " + personResourceName + ".")
-            sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-          }
-          else {
+            People.People.updateContact(bodyRequest, personResourceName, {
+              updatePersonFields:
+                "addresses,biographies,birthdays,clientData,emailAddresses,events,externalIds,genders,imClients,interests,locales,locations,memberships,miscKeywords,names,nicknames,occupations,organizations,phoneNumbers,relations,sipAddresses,urls,userDefined",
+            });
+            Logger.log(
+              "     Updated Google contact " + personResourceName + "."
+            );
+            sheet
+              .getRange(i + 1, (currUserNum + 1) * 2 + 25)
+              .setValue(newestUpdate);
+          } else {
             MailApp.sendEmail({
               to: statusEmail,
               subject: "GSCS Sync Conflict",
-              htmlBody: "Contact " + (contactRows[i][(currUserNum + 1) * 2 + 23]) + " for " + currUser + " has been deleted, but other users have updated the contact's information since it was deleted.  It is recommended you remove this contact from the trash.  If this contact should be deleted, try again after removing it from the trash."
-            })
+              htmlBody:
+                "Contact " +
+                contactRows[i][(currUserNum + 1) * 2 + 23] +
+                " for " +
+                currUser +
+                " has been deleted, but other users have updated the contact's information since it was deleted.  It is recommended you remove this contact from the trash.  If this contact should be deleted, try again after removing it from the trash.",
+            });
           }
-        }
-        else {
+        } else {
           // Add Contact from Spreadsheet
           var newContact = People.People.createContact(bodyRequest);
-          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 24).setValue(newContact.resourceName)
-          sheet.getRange(i + 1, (currUserNum + 1) * 2 + 25).setValue(newestUpdate)
-          Logger.log("     Adding Google contact " + newContact.resourceName + ".")
+          sheet
+            .getRange(i + 1, (currUserNum + 1) * 2 + 24)
+            .setValue(newContact.resourceName);
+          sheet
+            .getRange(i + 1, (currUserNum + 1) * 2 + 25)
+            .setValue(newestUpdate);
+          Logger.log(
+            "     Adding Google contact " + newContact.resourceName + "."
+          );
         }
       }
     }
     // if function has been running longer than five minutes, return incomplete for ClientInit;  this will keep the script from throwing a max runtime error at six minutes
-    if (((new (Date) - startTime) / 1000) > 300) {
-      return (i);
+    if ((new Date() - startTime) / 1000 > 300) {
+      return i;
     }
-  }//);
-  return ("complete");
+  } //);
+  return "complete";
 }
 
 function UpdatesMerge() {
-  Logger.log("UpdatesMerge")
+  Logger.log("UpdatesMerge");
   var dateArray = new Array();
-  var column = (currUserNum + 1) * 2 + 24; //column Index   
-  var columnValues2D = sheet.getRange(1, column, sheet.getLastRow()).getValues()
+  var column = (currUserNum + 1) * 2 + 24; //column Index
+  var columnValues2D = sheet
+    .getRange(1, column, sheet.getLastRow())
+    .getValues();
   var columnValues = String(columnValues2D).split(","); // convert to single dimension array
 
   if (mySheet.getLastRow() > 0) {
@@ -475,52 +596,80 @@ function UpdatesMerge() {
       if (searchResult != -1) {
         dateArray = [];
         for (var i = 0; i < syncAccounts.length; i++) {
-          dateArray.push(sheet.getRange(searchResult + 1, (i + 1) * 2 + 25).getValue())
+          dateArray.push(
+            sheet.getRange(searchResult + 1, (i + 1) * 2 + 25).getValue()
+          );
         }
         // Update contact
 
-        Logger.log("     Updated " + resourceName + " on spreadsheet.")
+        Logger.log("     Updated " + resourceName + " on spreadsheet.");
         sheet.getRange(searchResult + 1, 1, 1, 25).setValues([contactArray]);
-        sheet.getRange(searchResult + 1, (currUserNum + 1) * 2 + 25).setValue(updateTime);
-      }
-      else {
+        sheet
+          .getRange(searchResult + 1, (currUserNum + 1) * 2 + 25)
+          .setValue(updateTime);
+      } else {
         // Add contact
 
         // append array with individual user's resourceNames
         var resourceNamesArray = [];
         for (var i = 0; i < syncAccounts.length; i++) {
           if (currUser == syncAccounts[i]) {
-            resourceNamesArray = resourceNamesArray.concat([resourceName, updateTime]);
-          }
-          else {
+            resourceNamesArray = resourceNamesArray.concat([
+              resourceName,
+              updateTime,
+            ]);
+          } else {
             resourceNamesArray = resourceNamesArray.concat(["", ""]);
           }
         }
         // add contact to end of sheet
         var appendArray = contactArray.concat(resourceNamesArray);
-        Logger.log("     Added " + resourceName + " to spreadsheet.")
+        Logger.log("     Added " + resourceName + " to spreadsheet.");
         sheet.appendRow(appendArray);
       }
-      c++
-    }
-    while ((c < myUpdates.length) && ((new (Date) - startTime) / 1000 < 300))
+      c++;
+    } while (c < myUpdates.length && (new Date() - startTime) / 1000 < 300);
   }
 
   if (c == mySheet.getLastRow()) {
     mySheet.clear();
-  }
-  else if (c) {
+  } else if (c) {
     mySheet.deleteRows(1, c);
   }
-
 }
 
 function getContactArray(contact) {
-  return ([contact.addresses, contact.biographies, contact.birthdays, contact.calendarUrls, contact.clientData, contact.emailAddresses, contact.events, contact.externalIds, contact.genders, contact.imClients, contact.interests, contact.locales, contact.locations, contact.memberships, contact.metadata, contact.miscKeywords, contact.names, contact.nicknames, contact.occupations, contact.organizations, contact.phoneNumbers, contact.relations, contact.sipAddresses, contact.urls, contact.userDefined]);
+  return [
+    contact.addresses,
+    contact.biographies,
+    contact.birthdays,
+    contact.calendarUrls,
+    contact.clientData,
+    contact.emailAddresses,
+    contact.events,
+    contact.externalIds,
+    contact.genders,
+    contact.imClients,
+    contact.interests,
+    contact.locales,
+    contact.locations,
+    contact.memberships,
+    contact.metadata,
+    contact.miscKeywords,
+    contact.names,
+    contact.nicknames,
+    contact.occupations,
+    contact.organizations,
+    contact.phoneNumbers,
+    contact.relations,
+    contact.sipAddresses,
+    contact.urls,
+    contact.userDefined,
+  ];
 }
 
 function RefreshSyncToken() {
-  Logger.log("RefreshSynctoken")
+  Logger.log("RefreshSynctoken");
   var i = 0;
   var pageToken;
   Logger.log(syncTokenFileName);
@@ -530,43 +679,40 @@ function RefreshSyncToken() {
 
   do {
     if (!syncTokenExpired) {
-      var connections = People.People.Connections.list('people/me', {
+      var connections = People.People.Connections.list("people/me", {
         pageToken: pageToken,
         requestSyncToken: true,
         syncToken: syncToken,
         pageSize: pageSize,
         personFields: masterPersonFields,
-        sources: ["READ_SOURCE_TYPE_CONTACT"]
+        sources: ["READ_SOURCE_TYPE_CONTACT"],
       });
-    }
-    else {
-      var connections = People.People.Connections.list('people/me', {
+    } else {
+      var connections = People.People.Connections.list("people/me", {
         pageToken: pageToken,
         requestSyncToken: true,
         pageSize: pageSize,
         personFields: masterPersonFields,
-        sources: ["READ_SOURCE_TYPE_CONTACT"]
+        sources: ["READ_SOURCE_TYPE_CONTACT"],
       });
     }
     try {
       connections.connections.forEach(function (person) {
         var newSyncToken = connections.nextSyncToken;
       });
-    }
-    catch { }
+    } catch {}
     pageToken = connections.nextPageToken;
-  }
-  while (pageToken);
+  } while (pageToken);
 
   // Set Synctoken
 
   var newSyncToken = connections.nextSyncToken;
   syncTokenFile.setContent(newSyncToken);
-  return (newSyncToken);
+  return newSyncToken;
 }
 
 function GetUpdatedContacts() {
-  Logger.log("GetUpdatedContacts")
+  Logger.log("GetUpdatedContacts");
   var pageToken;
   var updatedContactsArray = new Array();
   var appendArray = new Array();
@@ -579,15 +725,14 @@ function GetUpdatedContacts() {
   do {
     try {
       refreshedSyncToken = false;
-      var connections = People.People.Connections.list('people/me', {
+      var connections = People.People.Connections.list("people/me", {
         pageToken: pageToken,
         syncToken: syncToken,
         pageSize: pageSize,
         personFields: masterPersonFields,
-        sources: ["READ_SOURCE_TYPE_CONTACT"]
+        sources: ["READ_SOURCE_TYPE_CONTACT"],
       });
-    }
-    catch {
+    } catch {
       Logger.log("Sync token error.  Refreshing token.");
       syncTokenExpired = true;
       syncToken = RefreshSyncToken();
@@ -596,75 +741,110 @@ function GetUpdatedContacts() {
       MailApp.sendEmail({
         to: statusEmail,
         subject: "GS Contacts Sync syncToken error!",
-        htmlBody: "There was a syncToken error while synchronizing.  Synchronizations may have been lost.  Please check your contacts."
-      })
+        htmlBody:
+          "There was a syncToken error while synchronizing.  Synchronizations may have been lost.  Please check your contacts.",
+      });
     }
 
     try {
       connections.connections.forEach(function (person) {
-        var contactArray = [person.addresses, person.biographies, person.birthdays, person.calendarUrls, person.clientData, person.emailAddresses, person.events, person.externalIds, person.genders, person.imClients, person.interests, person.locales, person.locations, person.memberships, person.metadata, person.miscKeywords, person.names, person.nicknames, person.occupations, person.organizations, person.phoneNumbers, person.relations, person.sipAddresses, person.urls, person.userDefined];
+        var contactArray = [
+          person.addresses,
+          person.biographies,
+          person.birthdays,
+          person.calendarUrls,
+          person.clientData,
+          person.emailAddresses,
+          person.events,
+          person.externalIds,
+          person.genders,
+          person.imClients,
+          person.interests,
+          person.locales,
+          person.locations,
+          person.memberships,
+          person.metadata,
+          person.miscKeywords,
+          person.names[0].displayName,
+          person.nicknames,
+          person.occupations,
+          person.organizations,
+          person.phoneNumbers,
+          person.relations,
+          person.sipAddresses,
+          person.urls,
+          person.userDefined,
+        ];
+        
+        contactArray = RemoveIDandStringify(contactArray);
 
-        contactArray = RemoveIDandStringify(contactArray)
-
-        // add Contact Groups to array to be saved in spreadsheet
-        var contactGroups = []
+// }
+        var contactGroups = [];
         try {
           for (var i = 0; i < person.memberships.length; i++) {
             for (var j = 0; j < contactGroupsList.length; j++) {
-              if (person.memberships[i].contactGroupMembership.contactGroupResourceName == contactGroupsList[j][1]) {
-                contactGroups[i] = contactGroupsList[j][0]
+              if (
+                person.memberships[i].contactGroupMembership
+                  .contactGroupResourceName == contactGroupsList[j][1]
+              ) {
+                contactGroups[i] = contactGroupsList[j][0];
               }
             }
           }
-        }
-        catch { }
+        } catch {}
 
-        contactArray[13] = contactGroups.join(",") // 14th column is where memberships are; will need to be changed if script updated
+        contactArray[13] = contactGroups.join(","); // 14th column is where memberships are; will need to be changed if script updated
 
         appendArray = contactArray.concat(person.resourceName);
 
         updatedContactsArray[n] = appendArray;
         n++;
-      })
+      });
       pageToken = connections.nextPageToken;
-    }
-    catch { }
-
-
-  }
-  while (pageToken || refreshedSyncToken == true);
+    } catch {}
+  } while (pageToken || refreshedSyncToken == true);
 
   if (updatedContactsArray.length > 0) {
-    Logger.log("     " + updatedContactsArray.length + " contacts queued for update.")
-    mySheet.getRange(mySheet.getLastRow() + 1, 1, updatedContactsArray.length, appendArray.length).setValues(updatedContactsArray);
+    Logger.log(
+      "     " + updatedContactsArray.length + " contacts queued for update."
+    );
+    mySheet
+      .getRange(
+        mySheet.getLastRow() + 1,
+        1,
+        updatedContactsArray.length,
+        appendArray.length
+      )
+      .setValues(updatedContactsArray);
   }
 }
 
 function getContactGroupsList() {
-  Logger.log("getContactGroupsList")
+  Logger.log("getContactGroupsList");
   var contactGroupsListJSON = People.ContactGroups.list({
-    "groupFields": "name",
-    "pageSize": 1000 // no more than 1000 contact groups
-  })
-  var contactGroupsList = []
-  contactGroupsListJSON.contactGroups.forEach(function (contactGroups) {
-    contactGroupsList.push([contactGroups.name, contactGroups.resourceName])
+    groupFields: "name",
+    pageSize: 1000, // no more than 1000 contact groups
   });
-  return (contactGroupsList)
+  var contactGroupsList = [];
+  contactGroupsListJSON.contactGroups.forEach(function (contactGroups) {
+    contactGroupsList.push([contactGroups.name, contactGroups.resourceName]);
+  });
+  return contactGroupsList;
 }
 
+
 function showElapsedTime() {
-  executionTime = (new (Date) - startTime) / 1000
-  Logger.log("     Elapsed Time: " + executionTime + " seconds.")
+  executionTime = (new Date() - startTime) / 1000;
+  Logger.log("     Elapsed Time: " + executionTime + " seconds.");
 }
 
 function dailyMaintenance() {
-  Logger.log("dailyMaintenance")
+  Logger.log("dailyMaintenance");
   var rowsDeleted = 0;
   // remove all users' permissions on spreadsheets
   for (var i = 0; i < syncAccounts.length; i++) {
     if (syncAccounts[i] != currUser) {
-      ss.removeEditor(syncAccounts[i])
+      ss.removeEditor(syncAccounts[i]);
     }
   }
 
@@ -673,17 +853,20 @@ function dailyMaintenance() {
 
   // delete any deleted contact rows from spreadsheet with "deleted":"true
   var column = 15; // 15th column is where '"delete": true' is stored
-  var deleteTrueColumns = sheet.getRange(1, column, sheet.getLastRow()).getValues()
+  var deleteTrueColumns = sheet
+    .getRange(1, column, sheet.getLastRow())
+    .getValues();
   var dateArray = new Array();
   var contactRows = sheet.getDataRange().getValues();
 
   for (var i = deleteTrueColumns.length - 1; i > 0; i--) {
     for (var j = 0; j < deleteTrueColumns[i].length; j++) {
-      if (deleteTrueColumns[i][j].includes("\"deleted\":true")) {
+      if (deleteTrueColumns[i][j].includes('"deleted":true')) {
         dateArray = [];
         for (var s = 0; s < syncAccounts.length; s++) {
-          if (contactRows[i][(s * 2) + 26].length > 0) { // if update time is missing, then don't add it
-            dateArray.push(contactRows[i][(s * 2) + 26])
+          if (contactRows[i][s * 2 + 26].length > 0) {
+            // if update time is missing, then don't add it
+            dateArray.push(contactRows[i][s * 2 + 26]);
           }
         }
         var oldestUpdate = new Date(Math.min.apply(null, dateArray));
@@ -696,7 +879,7 @@ function dailyMaintenance() {
       }
     }
   }
-  Logger.log("     Rows deleted: " + rowsDeleted)
+  Logger.log("     Rows deleted: " + rowsDeleted);
 
   // recreate triggers for master account
   createSyncContactsTrigger();
@@ -706,7 +889,6 @@ function dailyMaintenance() {
 
   for (var i = 0; i < syncAccounts.length; i++) {
     if (syncAccounts[i] != currUser) {
-      ss.addEditor(syncAccounts[i])
+      ss.addEditor(syncAccounts[i]);
     }
   }
-}
